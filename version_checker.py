@@ -3,9 +3,12 @@
 Version Helper
 Python utility designed to facilitate version file checks & updates
     ln -s $(pwd)/version_checker.py $(pwd)/.git/hooks/pre-push
+
+To make full-use of it create a .bumpversion.cfg!
 '''
 
 import argparse
+import configparser
 import git
 import logging
 import re
@@ -19,15 +22,29 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 LOG = logging.getLogger('(versioner)')
 
 
-# TODO: populate based on configparse?
+# TODO: clean this up...
 
+CONFIG_FILE = '.bumpversion.cfg'
+with open(CONFIG_FILE, 'r') as f:
+    cfg_raw = f.read()
+cp = configparser.ConfigParser()
+cp.read_string(cfg_raw)
+CURRENT_VERSION = cp.get('bumpversion', 'current_version')
 
 BASE = 'origin/master'
 CURRENT = 'HEAD'
-VERSION_FILE = 'version.txt'
+VERSION_FILE = CONFIG_FILE
 VERSION_REGEX = r'([0-9]+\.?){3}'
-FILES = ['openapi-spec.json', 'kustomize/base/service.yaml']
-FILE_REGEXES = [rf'"version":\s"{VERSION_REGEX}"', VERSION_REGEX]
+FILES = [s.split(':')[-1] for s in cp.sections() if ':file:' in s]
+FILE_REGEXES = []
+for f in FILES:
+    fregex = VERSION_REGEX
+    section = f'bumpversion:file:{f}'
+    if cp.has_option(section, 'search'):
+        fregex = cp.get(section, 'search').replace('{current_version}', VERSION_REGEX)
+    FILE_REGEXES.append(fregex)
+
+#FILE_REGEXES = [rf'"version":\s"{VERSION_REGEX}"', VERSION_REGEX]
 
 # bash color help for flair
 NO_COLOR = "\033[0m"
@@ -93,22 +110,25 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
     diffs = list(base_commit.diff(current_commit).iter_change_type('M'))
 
     # filter the changes for the base version file, empty list if not found
-    version_file_diff = list(filter(lambda d: d.a_path == version_file, diffs))
-    if version_file_diff:
-        _ok(f'{version_file} change detected')
-    else:
+    version_file_diff = list(filter(lambda d: d.b_path == version_file, diffs))
+    if version_file not in base_commit.tree:
+        LOG.warning(f'{version_file} not found in base ({base}), assuming new file...')
+        new = CURRENT_VERSION
+        old = ''
+    elif not version_file_diff:
         _error(f'{version_file} change not detected')
+    else:
+        # attempt to parse out new & old version from inputted version_file
+        _ok(f'{version_file} change detected')
+        try:
+            old_file = _commit_file(base_commit, version_file)
+            old = re.search(version_regex, old_file).group(0)
 
-    # attempt to parse out new & old version from inputted version_file
-    try:
-        old_file = _commit_file(base_commit, version_file)
-        old = re.search(version_regex, old_file).group(0)
-
-        new_file = _commit_file(current_commit, version_file)
-        new = re.search(version_regex, new_file).group(0)
-    except AttributeError as e:
-        LOG.error(e)
-        _error(f'could not find {version_regex} in {version_file}')
+            new_file = _commit_file(current_commit, version_file)
+            new = re.search(version_regex, new_file).group(0)
+        except AttributeError as e:
+            LOG.error(e)
+            _error(f'could not find {version_regex} in {version_file}')
     
     # verify the change is productive
     LOG.info(f'\told version = {old}')
@@ -120,7 +140,7 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
 
     if len(files) == 0:
         LOG.warning(f'No extra file checking inputted, only verfied {version_file}')
-        return        
+        return
 
     # verify any other inputted files match the version_file's contents
     if len(file_regexes) != len(files):
@@ -159,10 +179,6 @@ def main():
     arg_parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
 
-    # this is useful as a command line utility with all the inputs
-    #   but if many files with unique regexes it'd get cluttered real fast
-    #   consider configargparse to allow some config options instead of cli?
-    # for now, defaulting to global vars prolly works, maybe default to env?
     _a = arg_parser.add_argument
     _a('--do-update', '-u', action='store_true',
         help='Update (increment) the patch version for the repo')
