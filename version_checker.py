@@ -21,7 +21,7 @@ CURRENT = 'HEAD'
 VERSION_FILE = 'version.txt'
 VERSION_REGEX = r'([0-9]+\.?){3}'
 FILES = ['openapi-spec.json', 'kustomize/base/service.yaml']
-FILE_REGEXES = []
+FILE_REGEXES = [rf'"version":\s"{VERSION_REGEX}"', VERSION_REGEX]
 
 # bash color help for flair
 NO_COLOR = "\033[0m"
@@ -47,6 +47,7 @@ def _ok(msg):
 def _error(msg):
     '''Helper to print out an error message and exit (1)'''
     LOG.error(f'{msg}... {ERROR}')
+    LOG.error('Run with "--log-level debug" for more detail')
     sys.exit(1)
 
 
@@ -104,11 +105,20 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
             f'defaulting to {version_regex}')
         file_regexes = [version_regex] * len(files)
 
+    if len(files) == 0:
+        LOG.warning(
+            f'No extra file checking inputted, only verfied {version_file}')
+
     errs = []
-    for f in files: # f, r in zip(files, file_regexes)
+    for f, r in zip(files, file_regexes):
         contents = _bash(f'git show {current}:{f}')
-        if old in contents or new not in contents:
+        matches = re.search(r, contents)
+        if not matches or new not in matches.group(0):
             errs.append(f'{f} needs to match {version_file}!')
+        if matches:
+            LOG.debug(f'{f}: {matches.group(0)}')
+        else:
+            LOG.debug(f'{f}: {matches}')
     if errs:
         err_txt = '\n\t'.join(errs)
         _error(f'not all files are correct\n\t{err_txt}')
