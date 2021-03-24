@@ -6,13 +6,15 @@ Python utility designed to facilitate version file checks & updates
 '''
 
 import argparse
+import git
 import logging
 import re
-import subprocess
 import sys
 
 
 # globals & default configs
+REPO = git.Repo('.')
+
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 LOG = logging.getLogger('(versioner)')
 
@@ -34,9 +36,9 @@ ERROR = _red('error')
 
 
 # helpers
-def _bash(cmd):
-    '''Helper to run quick bash command and return its shell output'''
-    return subprocess.check_output(cmd, shell=True).decode()
+def _commit_file(fcommit, fpath):
+    '''Helper (shorthand) to extract file contents at a specific commit'''
+    return (fcommit.tree / fpath).data_stream.read().decode()
 
 
 def _ok(msg):
@@ -79,48 +81,57 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
     LOG.debug(f'{base}, {current}, {version_file}, {version_regex}, {files}')
     LOG.debug(f'{file_regexes}')
 
-    changelist = _bash(f'git diff --name-only {base}..{current}')
+    base_commit = REPO.commit(base)
+    current_commit = REPO.commit(current)
 
-    if version_file in changelist:
+    # files that were modified
+    base_commit = REPO.commit(base)
+    current_commit = REPO.commit(current)
+    diffs = list(base_commit.diff(current_commit).iter_change_type('M'))
+
+    # filter the changes for the base version file, empty list if not found
+    version_file_diff = list(filter(lambda d: d.a_path == version_file, diffs))
+    if version_file_diff:
         _ok(f'{version_file} change detected')
     else:
         _error(f'{version_file} change not detected')
 
-    changes = _bash(f'git diff {base}..{current} -- {version_file}')
-    LOG.debug(changes)
-
+    # attempt to parse out new & old version from inputted version_file
     try:
-        # [1:] cuts of prefix +/- from git
-        old = re.search(fr'\-{version_regex}', changes).group(0)[1:]
-        new = re.search(fr'\+{version_regex}', changes).group(0)[1:]
-        LOG.info(f'\told version = {old}')
-        LOG.info(f'\tnew version = {new}')
-    except Exception:
-        # TODO catch specific regex/access errors only...
-        _error(f'could not find {version_regex} in {version_file}')
+        old_file = _commit_file(base_commit, version_file)
+        old = re.search(version_regex, old_file).group(0)
 
+        new_file = _commit_file(current_commit, version_file)
+        new = re.search(version_regex, new_file).group(0)
+    except AttributeError as e:
+        LOG.error(e)
+        _error(f'could not find {version_regex} in {version_file}')
+    
+    # verify the change is productive
+    LOG.info(f'\told version = {old}')
+    LOG.info(f'\tnew version = {new}')
     if old < new:
         _ok('new version larger than old')
     else:
         _error('new version smaller than old')
 
+    if len(files) == 0:
+        LOG.warning(f'No extra file checking inputted, only verfied {version_file}')
+        return        
+
+    # verify any other inputted files match the version_file's contents
     if len(file_regexes) != len(files):
         LOG.warning(
             f'Inputted file regexes didnt match file list size, '
             f'defaulting to {version_regex}')
         file_regexes = [version_regex] * len(files)
 
-    if len(files) == 0:
-        LOG.warning(
-            f'No extra file checking inputted, only verfied {version_file}')
-
     errs = []
     for f, r in zip(files, file_regexes):
-        contents = _bash(f'git show {current}:{f}')
-        matches = re.search(r, contents)
+        matches = re.search(r, _commit_file(current_commit, f))
         if not matches or new not in matches.group(0):
             errs.append(f'{f} needs to match {version_file}!')
-        if matches:
+        elif matches:
             LOG.debug(f'{f}: {matches.group(0)}')
         else:
             LOG.debug(f'{f}: {matches}')
@@ -179,10 +190,12 @@ def main():
 
     if not args.do_update:
         do_check(
-            args.base, args.current, args.version_file, args.version_regex,
+            args.base, args.current, args.version_file, args.version_regex, 
             args.files, args.file_regexes)
     else:
         do_update()
+
+    _error('arbitrary exit 1 till we are done testing')
 
 
 if __name__ == '__main__':
