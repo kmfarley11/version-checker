@@ -18,6 +18,10 @@ REPO = git.Repo('.')
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 LOG = logging.getLogger('(versioner)')
 
+
+# TODO: populate based on configparse?
+
+
 BASE = 'origin/master'
 CURRENT = 'HEAD'
 VERSION_FILE = 'version.txt'
@@ -52,8 +56,7 @@ def _error(msg):
     LOG.error('Run with "--log-level debug" for more detail')
     LOG.error('''
         Otherwise, try bumping your versions i.e.
-            git checkout origin/master -- version.txt
-            bump2version patch version.txt openapi-spec.json kustomize/base/service.yaml --current-version $(cat version.txt) --allow-dirty
+            .venv/bin/bump2version patch --commit
     ''')
     sys.exit(1)
 
