@@ -48,6 +48,11 @@ def _error(msg):
     '''Helper to print out an error message and exit (1)'''
     LOG.error(f'{msg}... {ERROR}')
     LOG.error('Run with "--log-level debug" for more detail')
+    LOG.error('''
+        Otherwise, try bumping your versions i.e.
+            git checkout origin/master -- version.txt
+            bump2version patch version.txt openapi-spec.json kustomize/base/service.yaml --current-version $(cat version.txt) --allow-dirty
+    ''')
     sys.exit(1)
 
 
