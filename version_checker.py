@@ -116,6 +116,7 @@ def _error(msg, abort=True):
                 .venv/bin/bump2version patch version.txt \\
                     --allow-dirty --no-configured-files --current-version 0.0.1
             Note: this checker will only succeed if the latest commit contains updated versions
+            To bypass it as a hook try using --no-verify but this is NOT preferred...
         ''')
         sys.exit(1)
 
