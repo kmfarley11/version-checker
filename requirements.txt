@@ -1,2 +1,10 @@
-bump2version
-GitPython
+astroid==2.5.1
+bump2version==1.0.1
+gitdb==4.0.5
+GitPython==3.1.14
+isort==5.8.0
+lazy-object-proxy==1.6.0
+mccabe==0.6.1
+smmap==3.0.5
+toml==0.10.2
+wrapt==1.12.1
