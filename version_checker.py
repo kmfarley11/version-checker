@@ -107,15 +107,16 @@ def _ok(msg):
 def _error(msg, abort=True):
     '''Helper to print out an error message and exit (1)'''
     LOG.error(f'{msg}... {ERROR}')
-    LOG.error('Run with "--log-level debug" for more detail')
-    LOG.error('''
-        Otherwise, try bumping your versions i.e.
-            .venv/bin/bump2version patch
-            .venv/bin/bump2version patch --commit
-            .venv/bin/bump2version patch version.txt \\
-                --allow-dirty --no-configured-files --current-version 0.0.1
-    ''')
     if abort:
+        LOG.error('Run with "--log-level debug" for more detail')
+        LOG.error('''
+            Otherwise, try bumping your versions i.e.
+                .venv/bin/bump2version patch --allow-dirty
+                .venv/bin/bump2version patch --commit
+                .venv/bin/bump2version patch version.txt \\
+                    --allow-dirty --no-configured-files --current-version 0.0.1
+            Note: this checker will only succeed if the latest commit contains updated versions
+        ''')
         sys.exit(1)
 
 
@@ -190,18 +191,18 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
             f'defaulting to {version_regex}')
         file_regexes = [version_regex] * len(files)
 
-    errs = []
+    error_detected = False
     for f, r in zip(files, file_regexes):
         matches = re.search(r, _get_commit_file(current_commit, f))
         if not matches or new not in matches.group(0):
-            errs.append(f'{f} needs to match {version_file}!')
+            _error(f'\t{f} needs to match {version_file}!', abort=False)
+            error_detected = True
         elif matches:
-            LOG.debug(f'{f}: {matches.group(0)}')
+            LOG.debug(f'\t{f}: {matches.group(0)}')
         else:
-            LOG.debug(f'{f}: {matches}')
-    if errs:
-        err_txt = '\n\t'.join(errs)
-        _error(f'not all files are correct\n\t{err_txt}')
+            LOG.debug(f'\t{f}: {matches}')
+    if error_detected:
+        _error(f'not all files are correct')
     else:
         _ok('all files matched the correct version')
 
@@ -261,8 +262,6 @@ def main():
             args.files, args.file_regexes)
     else:
         do_update(args.update)
-
-    _error('arbitrary exit 1 till we are done testing')
 
 
 if __name__ == '__main__':
