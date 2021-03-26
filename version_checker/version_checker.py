@@ -155,11 +155,11 @@ def search_commit_file(git_commit, fpath, search_regex, abort=True):
     Accepts GitPython commit object, filepath, and regex to search for (and bool to abort or not)
     Returns search text or empty string
     '''
-    if fpath in git_commit.tree:
+    try:
         commit_file = _get_commit_file(git_commit, fpath)
         return _search_or_error(search_regex, commit_file, abort=abort)
-
-    _error(f'file {fpath} not found in the provided git.Commit {git_commit}', abort=abort)
+    except KeyError:
+        _error(f'file {fpath} not found in the provided git.Commit {git_commit}', abort=abort)
     return ''
 
 
@@ -215,6 +215,7 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
         file_regexes = [version_regex] * len(files)
 
     error_detected = False
+    LOG.debug(f'checking {files} against regexes {file_regexes}')
     for _f, _r in zip(files, file_regexes):
         file_version = search_commit_file(current_commit, _f, _r, abort=False)
         if new not in file_version:
