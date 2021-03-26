@@ -51,6 +51,7 @@ Thumbs.db
 # Python...
 **/__pycache__
 .venv
+*egg-info
 
 # env/editor
 **/*.swp
