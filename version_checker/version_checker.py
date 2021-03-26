@@ -47,8 +47,8 @@ BASE = os.getenv('VERSION_BASE', 'origin/master')
 CURRENT = os.getenv('VERSION_CURRENT', 'HEAD')
 VERSION_FILE = os.getenv('VERSION_FILE', CONFIG_FILE)
 VERSION_REGEX = os.getenv('VERSION_REGEX', r'([0-9]+\.?){3}')
-FILES = os.getenv('VERSION_FILES', [])
-FILE_REGEXES = os.getenv('VERSION_FILE_REGEXES', [])
+FILES = []
+FILE_REGEXES = []
 
 # bash color help for flair
 NO_COLOR = "\033[0m"
@@ -84,11 +84,13 @@ def _error(msg, abort=True):
         LOG.error('''
             Otherwise, try bumping your versions i.e.
                 bump2version patch --allow-dirty
-                bump2version patch --commit
-                bump2version patch version.txt \\
-                    --allow-dirty --no-configured-files --current-version 0.0.1
+                bump2version patch --help
+
             Note: this checker will only succeed if the latest commit contains updated versions
             To bypass it as a hook try using --no-verify but this is NOT preferred...
+
+            If your files are out-of sync, it is recommended to revert the files per the base branch
+            Then the bump2version program can update them all synchronously
         ''')
         sys.exit(1)
 
@@ -115,7 +117,7 @@ def _search_or_error(regex_str, to_search_str, abort=True):
     if result:
         return result.group(0)
     LOG.debug(f'inputted: "{to_search_str}"')
-    _error(f'could not find {regex_str} in inputted string', abort=abort)
+    _error(f'could not find "{regex_str}" in inputted string', abort=abort)
     return ''
 
 
