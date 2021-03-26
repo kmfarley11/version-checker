@@ -114,9 +114,12 @@ def _log_name_to_level(name):
 def _search_or_error(regex_str, to_search_str, abort=True):
     '''Helper to do a regex search and return matches, exits program on error'''
     result = re.search(regex_str, to_search_str)
+    LOG.debug(f'inputted: "{to_search_str}"')
     if result:
         return result.group(0)
-    LOG.debug(f'inputted: "{to_search_str}"')
+    elif regex_str in to_search_str:
+        LOG.debug(f'regex parse failed, but raw string compare succeeded for "{regex_str}"')
+        return regex_str
     _error(f'could not find "{regex_str}" in inputted string', abort=abort)
     return ''
 
