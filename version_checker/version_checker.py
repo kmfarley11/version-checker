@@ -1,5 +1,5 @@
 #!.venv/bin/python
-'''
+r'''
 Version Helper
 Python utility designed to facilitate version file checks & updates.
 Assumes git and prefers bump2version.
@@ -9,7 +9,7 @@ Usage:
     ./version_checker.py -h
     ./version_checker.py -l debug
     ./version_checker.py -v version.txt -r '([0-9]+\.?){3}'
-    ./version_checker.py -v version.txt -f openapi-spec.json --file-regexes 'version.: ([0-9]+\.?){3}'
+    ./version_checker.py -v version.txt -f openapi-spec.json --file-regexes 'version.: \d\.\d\.\d'
 
 Can be used as a simple dev script, or a git-hook:
     ln -s $(pwd)/version_checker.py $(pwd)/.git/hooks/pre-push
@@ -20,12 +20,13 @@ To make full-use of this tool, create a .bumpversion.cfg or setup.cfg!
 
 import argparse
 import configparser
-import git
 import logging
 import os
 import re
 import subprocess
 import sys
+
+import git
 
 
 # globals & default configs
@@ -64,25 +65,25 @@ def _load_bumpversion_config(cfg_file):
         LOG.warning(f'bumpversion config {cfg_file} not found, skipping...')
         return False
 
-    with open(cfg_file, 'r') as f:
-        cfg_raw = f.read()
+    with open(cfg_file, 'r') as _f:
+        cfg_raw = _f.read()
 
-    cp = configparser.ConfigParser()
-    cp.read_string(cfg_raw)
+    cfg = configparser.ConfigParser()
+    cfg.read_string(cfg_raw)
 
-    if not cp.has_section('bumpversion') or not cp.has_option('bumpversion', 'current_version'):
+    if not cfg.has_section('bumpversion') or not cfg.has_option('bumpversion', 'current_version'):
         LOG.warning(f'invalid bumpversion config detected {cfg_file}')
         LOG.warning('see github.com/c4urself/bump2version for more details, skipping cfg parse...')
         return False
 
     global FILE_REGEXES
     global FILES
-    FILES = [s.split(':')[-1] for s in cp.sections() if ':file:' in s]
-    for f in FILES:
+    FILES = [s.split(':')[-1] for s in cfg.sections() if ':file:' in s]
+    for _f in FILES:
         fregex = VERSION_REGEX
-        section = f'bumpversion:file:{f}'
-        if cp.has_option(section, 'search'):
-            fregex = cp.get(section, 'search').replace('{current_version}', VERSION_REGEX)
+        section = f'bumpversion:file:{_f}'
+        if cfg.has_option(section, 'search'):
+            fregex = cfg.get(section, 'search').replace('{current_version}', VERSION_REGEX)
         FILE_REGEXES.append(fregex)
 
     LOG.info(f'Successfully parsed {cfg_file}')
@@ -123,16 +124,29 @@ def _error(msg, abort=True):
 
 def _log_name_to_level(name):
     '''Helper to convert inputted log'''
+    lvl = -1
     if name.lower() == 'debug':
-        return logging.DEBUG
+        lvl = logging.DEBUG
     elif name.lower() == 'info':
-        return logging.INFO
+        lvl = logging.INFO
     elif name.lower() == 'warning':
-        return logging.WARNING
+        lvl = logging.WARNING
     elif name.lower() == 'error':
-        return logging.ERROR
+        lvl = logging.ERROR
     else:
         raise NotImplementedError(f'log level {name} not found')
+    return lvl
+
+
+def _search_or_error(regex_str, to_search_str, abort=True):
+    '''Helper to do a regex search and return matches, exits program on error'''
+    result = re.search(regex_str, to_search_str)
+    if result:
+        return result.group(0)
+    LOG.debug(f'inputted: "{to_search_str}"')
+    _error(f'could not find {regex_str} in inputted string', abort=abort)
+    return ''
+
 
 
 # utility functions
@@ -144,34 +158,28 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
     LOG.debug(f'{base}, {current}, {version_file}, {version_regex}, {files}')
     LOG.debug(f'{file_regexes}')
 
-    base_commit = REPO.commit(base)
-    current_commit = REPO.commit(current)
-
-    # files that were modified
+    # get the files that were modified
     base_commit = REPO.commit(base)
     current_commit = REPO.commit(current)
     diffs = list(base_commit.diff(current_commit).iter_change_type('M'))
 
     # filter the changes for the base version file, empty list if not found
     version_file_diff = list(filter(lambda d: d.b_path == version_file, diffs))
-    if version_file not in base_commit.tree:
+    new, old = '', ''
+
+    if version_file not in base_commit.tree and version_file in current_commit.tree:
         LOG.warning(f'{version_file} not found in base ({base}), assuming new file...')
-        new = re.search(version_regex, _get_commit_file(current_commit, version_file)).group(0)
-        old = ''
+        new = _search_or_error(version_regex, _get_commit_file(current_commit, version_file))
     elif not version_file_diff:
         _error(f'{version_file} change not detected')
     else:
         # attempt to parse out new & old version from inputted version_file
         _ok(f'{version_file} change detected')
-        try:
-            old_file = _get_commit_file(base_commit, version_file)
-            old = re.search(version_regex, old_file).group(0)
+        old_file = _get_commit_file(base_commit, version_file)
+        old = _search_or_error(version_regex, old_file)
 
-            new_file = _get_commit_file(current_commit, version_file)
-            new = re.search(version_regex, new_file).group(0)
-        except AttributeError as e:
-            LOG.error(e)
-            _error(f'could not find {version_regex} in {version_file}')
+        new_file = _get_commit_file(current_commit, version_file)
+        new = _search_or_error(version_regex, new_file)
 
     # verify the change is productive
     LOG.info(f'\told version = {old}')
@@ -193,19 +201,19 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
         file_regexes = [version_regex] * len(files)
 
     error_detected = False
-    for f, r in zip(files, file_regexes):
-        matches = re.search(r, _get_commit_file(current_commit, f))
+    for _f, _r in zip(files, file_regexes):
+        matches = re.search(_r, _get_commit_file(current_commit, _f))
         if not matches or new not in matches.group(0):
-            _error(f'\t{f} needs to match {version_file}!', abort=False)
+            _error(f'\t{_f} needs to match {version_file}!', abort=False)
             error_detected = True
         elif matches:
-            LOG.debug(f'\t{f}: {matches.group(0)}')
+            LOG.debug(f'\t{_f}: {matches.group(0)}')
         else:
-            LOG.debug(f'\t{f}: {matches}')
+            LOG.debug(f'\t{_f}: {matches}')
     if error_detected:
-        _error(f'not all files are correct')
-    else:
-        _ok('all files matched the correct version')
+        _error('not all files are correct')
+
+    _ok('all files matched the correct version')
 
 
 def do_update(part, options='--allow-dirty'):
