@@ -6,13 +6,13 @@ Assumes git and prefers bump2version.
 Sync files containing raw version text, and verify they get bumped from a git base location.
 
 Usage:
-    ./version_checker.py -h
-    ./version_checker.py -l debug
-    ./version_checker.py -v version.txt -r '([0-9]+\.?){3}'
-    ./version_checker.py -v version.txt -f openapi-spec.json --file-regexes 'version.: \d\.\d\.\d'
+    version_checker.py -h
+    version_checker.py -l debug
+    version_checker.py -v version.txt -r '([0-9]+\.?){3}'
+    version_checker.py -v version.txt -f openapi-spec.json --file-regexes 'version.: \d\.\d\.\d'
 
 Can be used as a simple dev script, or a git-hook:
-    ln -s $(pwd)/version_checker.py $(pwd)/.git/hooks/pre-push
+    version_checker -i pre-push
 
 To make full-use of this tool, create a .bumpversion.cfg or setup.cfg!
     see github.com/c4urself/bump2version
@@ -30,10 +30,14 @@ import git
 
 
 # globals & default configs
-REPO = git.Repo('.')
-
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 LOG = logging.getLogger('(version_checker)')
+
+try:
+    REPO = git.Repo('.')
+except git.exc.InvalidGitRepositoryError:
+    LOG.critical('This utility must be run from the root of a git repository!')
+    sys.exit(1)
 
 # tries to find .bumpversion.cfg first to load globals, then tries setup.cfg, then uses args
 CONFIG_FILE = os.getenv('VERSION_CONFIG_FILE', '.bumpversion.cfg')
@@ -235,6 +239,21 @@ def do_update(part, options='--allow-dirty'):
     LOG.info(_bash(cmd))
 
 
+def install_hook(hook):
+    '''Symlink this program as a git-hook'''
+    hook_path = os.path.abspath(os.path.join('.', '.git', 'hooks', hook))
+    prog_path = os.path.abspath(__file__)
+    if not os.path.exists(prog_path):
+        _error(f'Symlink source source "{prog_path}" not found!')
+    elif os.path.exists(hook_path) or os.path.islink(hook_path):
+        LOG.error(f'Git hook "{hook_path}" already exists!')
+        LOG.error('Remove the existing hook and re-try if further action is desired.')
+        sys.exit(1)
+    else:
+        os.symlink(prog_path, hook_path)
+        _ok(f'"{prog_path}", installed to "{hook_path}"')
+
+
 # main method
 def main():
     '''Main function for version check/update stuff.'''
@@ -252,13 +271,12 @@ def main():
         LOG.warning('bumpversion configs not found, skipping...')
 
     _a = arg_parser.add_argument
-
-    # TODO: add install-as-hook arg... so users dont have to symlink...
-
+    _a('--install-hook', '-i', choices=['pre-push'], default=None,
+        help='Install version_checker as a git hook (works best with .bumpconfig.cfg)')
     _a('--update', '-u', choices=['major', 'minor', 'patch'], default=None,
         help='Update versions via bump2version, assumes .bumpconfig.cfg or setup.cfg')
-    _a('--log-level', '-l', choices=['info', 'debug', 'warning', 'error'],
-        default='info', help='Set the log level for the application')
+    _a('--log-level', '-l', choices=['info', 'debug', 'warning', 'error'], default='info',
+        help='Set the log level for the application')
 
     _a('--base', '-b', type=str, default=BASE,
         help='Branch in version control to check against')
@@ -282,12 +300,16 @@ def main():
     LOG.setLevel(_log_name_to_level(args.log_level))
     LOG.debug(args)
 
-    if not args.update:
+    if args.install_hook:
+        install_hook(args.install_hook)
+
+    elif args.update:
+        do_update(args.update)
+
+    else:
         do_check(
             args.base, args.current, args.version_file, args.version_regex,
             args.files, args.file_regexes)
-    else:
-        do_update(args.update)
 
 
 if __name__ == '__main__':
