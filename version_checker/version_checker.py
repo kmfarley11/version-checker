@@ -28,35 +28,20 @@ import sys
 
 import git
 
+from version_checker.constants import LOG_NAME, OK, ERROR, CONFIG_FILE, BASE, \
+                                      CURRENT, VERSION_FILE, VERSION_REGEX, \
+                                      FILES, FILE_REGEXES
+
 
 # globals & default configs
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-LOG = logging.getLogger('(version_checker)')
+LOG = logging.getLogger(LOG_NAME)
 
 try:
     REPO = git.Repo('.')
 except git.exc.InvalidGitRepositoryError:
     LOG.critical('This utility must be run from the root of a git repository!')
     sys.exit(1)
-
-# tries to find .bumpversion.cfg first to load globals, then uses args
-CONFIG_FILE = os.getenv('VERSION_CONFIG_FILE', '.bumpversion.cfg')
-
-BASE = os.getenv('VERSION_BASE', 'origin/master')
-CURRENT = os.getenv('VERSION_CURRENT', 'HEAD')
-VERSION_FILE = os.getenv('VERSION_FILE', CONFIG_FILE)
-VERSION_REGEX = os.getenv('VERSION_REGEX', r'([0-9]+\.?){3}')
-FILES = []
-FILE_REGEXES = []
-
-# bash color help for flair
-NO_COLOR = "\033[0m"
-GREEN = "\033[0;92m"
-RED = "\033[0;91m"
-_red = lambda s: f'{RED}{s}{NO_COLOR}'
-_grn = lambda s: f'{GREEN}{s}{NO_COLOR}'
-OK = _grn('ok')
-ERROR = _red('error')
 
 
 # (protected) helpers
@@ -112,15 +97,18 @@ def _log_name_to_level(name):
 
 def _search_or_error(regex_str, to_search_str, abort=True):
     '''Helper to do a regex search and return matches, exits program on error'''
+    retval = ''
     result = re.search(regex_str, to_search_str)
     LOG.debug(f'inputted: "{to_search_str}"')
+    LOG.debug(f'search txt: "{regex_str}"')
     if result:
-        return result.group(0)
+        retval = result.group(0)
     elif regex_str in to_search_str:
         LOG.debug(f'regex parse failed, but raw string compare succeeded for "{regex_str}"')
-        return regex_str
-    _error(f'could not find "{regex_str}" in inputted string', abort=abort)
-    return ''
+        retval = regex_str
+    else:
+        _error(f'could not find "{regex_str}" in inputted string', abort=abort)
+    return retval
 
 
 # utility functions
