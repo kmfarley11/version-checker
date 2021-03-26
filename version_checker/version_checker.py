@@ -14,7 +14,7 @@ Usage:
 Can be used as a simple dev script, or a git-hook:
     version_checker -i pre-push
 
-To make full-use of this tool, create a .bumpversion.cfg or setup.cfg!
+To make full-use of this tool, create a .bumpversion.cfg!
     see github.com/c4urself/bump2version
 '''
 
@@ -39,9 +39,8 @@ except git.exc.InvalidGitRepositoryError:
     LOG.critical('This utility must be run from the root of a git repository!')
     sys.exit(1)
 
-# tries to find .bumpversion.cfg first to load globals, then tries setup.cfg, then uses args
+# tries to find .bumpversion.cfg first to load globals, then uses args
 CONFIG_FILE = os.getenv('VERSION_CONFIG_FILE', '.bumpversion.cfg')
-CONFIG_FILE_ALT = os.getenv('VERSION_CONFIG_FILE_ALT', 'setup.cfg')
 
 BASE = os.getenv('VERSION_BASE', 'origin/master')
 CURRENT = os.getenv('VERSION_CURRENT', 'HEAD')
@@ -246,7 +245,7 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
 def do_update(part, options='--allow-dirty'):
     '''Enact version updates for local files
 
-    Just calls out to bump2version, relies on a .bumpversion.cfg or setup.cfg
+    Just calls out to bump2version, relies on a .bumpversion.cfg
     '''
     cmd = f'bump2version {part} {options}'
     LOG.info(f"attempting command: '{cmd}'")
@@ -279,8 +278,6 @@ def main():
     files, file_regexes = FILES, FILE_REGEXES
     if os.path.exists(CONFIG_FILE) and os.path.isfile(CONFIG_FILE):
         files, file_regexes = get_bumpversion_config(CONFIG_FILE)
-    elif os.path.exists(CONFIG_FILE_ALT) and os.path.isfile(CONFIG_FILE_ALT):
-        files, file_regexes = get_bumpversion_config(CONFIG_FILE_ALT)
     else:
         LOG.warning('bumpversion configs not found, skipping...')
 
@@ -288,7 +285,7 @@ def main():
     _a('--install-hook', '-i', choices=['pre-push'], default=None,
         help='Install version_checker as a git hook (works best with .bumpconfig.cfg)')
     _a('--update', '-u', choices=['major', 'minor', 'patch'], default=None,
-        help='Update versions via bump2version, assumes .bumpconfig.cfg or setup.cfg')
+        help='Update versions via bump2version, assumes .bumpconfig.cfg')
     _a('--log-level', '-l', choices=['info', 'debug', 'warning', 'error'], default='info',
         help='Set the log level for the application')
 

@@ -73,3 +73,14 @@ version_checker -i pre-push
 bump2version patch
 bump2version --help
 ```
+
+### environment variables
+A few configurations can be modified by environment variables:
+
+Environment Variable | Default | Description
+------------ | ------------- | -------------
+VERSION_BASE | origin/master | The base branch/commit to check versions against
+VERSION_HEAD | HEAD | The current commit to check versions on
+VERSION_FILE | .bumpversion.cfg | The config file with version configs to parse
+VERSION_REGEX | `([0-9]+\.?){3}` | The version regex to search for, changes to this have not been tested much
+
