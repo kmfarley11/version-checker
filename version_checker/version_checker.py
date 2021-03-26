@@ -45,10 +45,10 @@ CONFIG_FILE_ALT = os.getenv('VERSION_CONFIG_FILE_ALT', 'setup.cfg')
 
 BASE = os.getenv('VERSION_BASE', 'origin/master')
 CURRENT = os.getenv('VERSION_CURRENT', 'HEAD')
-VERSION_FILE = CONFIG_FILE
-VERSION_REGEX = r'([0-9]+\.?){3}'
-FILES = []
-FILE_REGEXES = []
+VERSION_FILE = os.getenv('VERSION_FILE', CONFIG_FILE)
+VERSION_REGEX = os.getenv('VERSION_REGEX', r'([0-9]+\.?){3}')
+FILES = os.getenv('VERSION_FILES', [])
+FILE_REGEXES = os.getenv('VERSION_FILE_REGEXES', [])
 
 # bash color help for flair
 NO_COLOR = "\033[0m"
@@ -123,7 +123,7 @@ def _search_or_error(regex_str, to_search_str, abort=True):
 def get_bumpversion_config(cfg_file):
     '''Helper to parse bumpversion configurations
 
-    returns file and file regexes to be checked, used to globals prior to argparse
+    returns file, file regexes, and current version to be checked
     '''
     cfg = configparser.ConfigParser()
     cfg.read(cfg_file)
@@ -133,6 +133,7 @@ def get_bumpversion_config(cfg_file):
         LOG.warning('see github.com/c4urself/bump2version for more details, skipping cfg parse...')
         return [], []
 
+    current_version = cfg.get('bumpversion', 'current_version')
     toplevel_options = cfg.options('bumpversion')
     replace_dict = {o: cfg.get('bumpversion', o) for o in toplevel_options}
     LOG.debug(f'toplevel (bumpversion) dict: {replace_dict}')
@@ -140,7 +141,7 @@ def get_bumpversion_config(cfg_file):
     file_regexes = []
     files = [s.split(':')[-1] for s in cfg.sections() if ':file:' in s]
     for _f in files:
-        fregex = VERSION_REGEX
+        fregex = current_version
         section = f'bumpversion:file:{_f}'
         # we only update if a search option is provided
         if cfg.has_option(section, 'search'):
