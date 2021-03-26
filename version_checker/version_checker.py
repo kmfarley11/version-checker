@@ -43,8 +43,8 @@ except git.exc.InvalidGitRepositoryError:
 CONFIG_FILE = os.getenv('VERSION_CONFIG_FILE', '.bumpversion.cfg')
 CONFIG_FILE_ALT = os.getenv('VERSION_CONFIG_FILE_ALT', 'setup.cfg')
 
-BASE = 'origin/master'
-CURRENT = 'HEAD'
+BASE = os.getenv('VERSION_BASE', 'origin/master')
+CURRENT = os.getenv('VERSION_CURRENT', 'HEAD')
 VERSION_FILE = CONFIG_FILE
 VERSION_REGEX = r'([0-9]+\.?){3}'
 FILES = []
@@ -125,25 +125,32 @@ def get_bumpversion_config(cfg_file):
 
     returns file and file regexes to be checked, used to globals prior to argparse
     '''
-    with open(cfg_file, 'r') as _f:
-        cfg_raw = _f.read()
-
     cfg = configparser.ConfigParser()
-    cfg.read_string(cfg_raw)
+    cfg.read(cfg_file)
 
     if not cfg.has_section('bumpversion') or not cfg.has_option('bumpversion', 'current_version'):
         LOG.warning(f'invalid bumpversion config detected {cfg_file}')
         LOG.warning('see github.com/c4urself/bump2version for more details, skipping cfg parse...')
         return [], []
 
+    toplevel_options = cfg.options('bumpversion')
+    replace_dict = {o: cfg.get('bumpversion', o) for o in toplevel_options}
+    LOG.debug(f'toplevel (bumpversion) dict: {replace_dict}')
+
     file_regexes = []
     files = [s.split(':')[-1] for s in cfg.sections() if ':file:' in s]
     for _f in files:
         fregex = VERSION_REGEX
         section = f'bumpversion:file:{_f}'
+        # we only update if a search option is provided
         if cfg.has_option(section, 'search'):
-            fregex = cfg.get(section, 'search').replace('{current_version}', VERSION_REGEX)
+            fregex = cfg.get(section, 'search')
+            # this'd be easier if bump2version used interpolation but they dont...
+            #   so we need to replace any {keys} at the bumpversion level with the values provided
+            for _k, _v in replace_dict.items():
+                fregex = fregex.replace('{%s}' % _k, _v)
         file_regexes.append(fregex)
+        LOG.debug(f'Added {fregex} for {_f}')
 
     LOG.info(f'Successfully parsed {cfg_file}')
     return files, file_regexes
