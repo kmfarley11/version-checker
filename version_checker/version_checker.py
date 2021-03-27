@@ -23,6 +23,7 @@ import configparser
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -242,12 +243,18 @@ def do_update(part, options='--allow-dirty'):
 
 def install_hook(hook):
     '''Symlink this program as a git-hook'''
+    LOG.info('verifying version_checker is installed...!')
+
+    prog_path = shutil.which('version_checker')
+    if not prog_path:
+        LOG.error('issue getting version_checker bin path, is it installed?!... {ERROR}')
+        sys.exit(1)
+
     hook_path = os.path.abspath(os.path.join('.', '.git', 'hooks', hook))
-    prog_path = os.path.abspath(__file__)
     if not os.path.exists(prog_path):
         _error(f'Symlink source source "{prog_path}" not found!')
     elif os.path.exists(hook_path) or os.path.islink(hook_path):
-        LOG.error(f'Git hook "{hook_path}" already exists!')
+        LOG.error(f'Git hook "{hook_path}" already exists!... {ERROR}')
         LOG.error('Remove the existing hook and re-try if further action is desired.')
         sys.exit(1)
     else:
