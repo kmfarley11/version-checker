@@ -13,7 +13,7 @@ pylint version_checker/
 ## Install
 ```bash
 sudo apt install python3 python3-pip
-python3 -m pip install version_checker-0.1.1-py3-none-any.whl
+python3 -m pip install version_checker-0.1.2-py3-none-any.whl
 version_checker -h
 ```
 

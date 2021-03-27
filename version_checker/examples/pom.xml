@@ -3,5 +3,5 @@
  
   <groupId>com.mycompany.app</groupId>
   <artifactId>my-app</artifactId>
-  <version>0.1.1</version> <!--this comment helps bumpversion find my (and only my) version!-->
+  <version>0.1.2</version> <!--this comment helps bumpversion find my (and only my) version!-->
 </project>
