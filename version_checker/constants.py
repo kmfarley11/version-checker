@@ -9,6 +9,7 @@ import os
 # tries to find .bumpversion.cfg first to load globals, then uses args
 CONFIG_FILE = os.getenv('VERSION_CONFIG_FILE', '.bumpversion.cfg')
 
+REPO_PATH = os.getenv('REPO_PATH', '.')
 BASE = os.getenv('VERSION_BASE', 'origin/master')
 CURRENT = os.getenv('VERSION_CURRENT', 'HEAD')
 VERSION_FILE = os.getenv('VERSION_FILE', CONFIG_FILE)
