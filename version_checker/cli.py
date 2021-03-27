@@ -38,14 +38,17 @@ from version_checker.constants import LOG_NAME, OK, ERROR, CONFIG_FILE, BASE, \
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 LOG = logging.getLogger(LOG_NAME)
 
-try:
-    REPO = git.Repo('.')
-except git.exc.InvalidGitRepositoryError:
-    LOG.critical('This utility must be run from the root of a git repository!')
-    sys.exit(1)
-
 
 # (protected) helpers
+def _get_repo(repo_path='.'):
+    '''Helper to verify a repo and return the git.Repo object'''
+    try:
+        return git.Repo(repo_path)
+    except git.exc.InvalidGitRepositoryError:
+        LOG.critical('This utility must be run from the root of a git repository!')
+        sys.exit(1)
+
+
 def _bash(cmd):
     '''Helper to run quick bash command and return its shell output'''
     return subprocess.check_output(cmd, shell=True).decode()
@@ -153,7 +156,6 @@ def get_bumpversion_config(cfg_file):
 def search_commit_file(git_commit, fpath, search_regex, abort=True):
     '''Search a file in a source tree for some regex pattern
 
-    Accepts GitPython commit object, filepath, and regex to search for (and bool to abort or not)
     Returns search text or empty string
     '''
     try:
@@ -164,19 +166,20 @@ def search_commit_file(git_commit, fpath, search_regex, abort=True):
     return ''
 
 
-# temporary disable some pylint to reduce globals and decouple from argparse itself
-#pylint: disable=too-many-arguments
-def do_check(base, current, version_file, version_regex, files, file_regexes):
+def do_check(base_commit, current_commit, files, file_regexes):
     '''Checking functionality
 
-    verify the local versions have been incremented from the base branch
-    '''
-    LOG.debug(f'{base}, {current}, {version_file}, {version_regex}, {files}')
-    LOG.debug(f'{file_regexes}')
+    verified the current file versions have been incremented from the base branch
 
-    # get the files that were modified
-    base_commit = REPO.commit(base)
-    current_commit = REPO.commit(current)
+    Positional arguments
+    base_commit     -- GitPython commit object for base hash to check against
+    current_commit  -- GitPython commit object for current hash to check
+    files           -- list of file paths with hardcoded versions inside ([0] = base versioning file)
+    file_regexes    -- list of regexes to check against relative file (in files) 
+    '''
+    LOG.debug(f'{base_commit}, {current_commit}, {files}, {file_regexes}')
+    version_file = files.pop(0)
+    version_regex = file_regexes.pop(0)
 
     # filter the changelist for the base version file, empty list if not found
     version_file_diff = list(
@@ -228,15 +231,14 @@ def do_check(base, current, version_file, version_regex, files, file_regexes):
         _error('not all files are correct')
 
     _ok('all files matched the correct version')
-#pylint: enable=too-many-arguments
 
 
-def do_update(part, options='--allow-dirty'):
+def do_update(version_part, options='--allow-dirty'):
     '''Enact version updates for local files
 
     Just calls out to bump2version, relies on a .bumpversion.cfg
     '''
-    cmd = f'bump2version {part} {options}'
+    cmd = f'bump2version {version_part} {options}'
     LOG.info(f"attempting command: '{cmd}'")
     LOG.info(_bash(cmd))
 
@@ -268,6 +270,9 @@ def main():
     # Note: a meld of RawTextHelpFormatter + ArgumentDefaultsHelpFormatter seems appropriate
     arg_parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+
+    # verify the runlocation has a git repo
+    repo = _get_repo()
 
     # prior to argument parsing etc., attempt to parse bumpversion config
     files, file_regexes = FILES, FILE_REGEXES
@@ -313,9 +318,10 @@ def main():
         do_update(args.update)
 
     else:
-        do_check(
-            args.base, args.current, args.version_file, args.version_regex,
-            args.files, args.file_regexes)
+        # for brevity & pylint, package version file & regex with others
+        files = [args.version_file] + args.files
+        file_regexes = [args.version_regex] + args.file_regexes
+        do_check(repo.commit(args.base), repo.commit(args.current), files, file_regexes)
 
 
 if __name__ == '__main__':
