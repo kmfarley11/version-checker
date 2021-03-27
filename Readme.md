@@ -65,6 +65,9 @@ I cannot assert that search & replace are regex compatibile, I would strongly re
 # to run manually
 version_checker -h
 
+# to see an example .bumpversion.cfg
+version_checker --example-config
+
 # to install as pre-push git hook
 version_checker -i pre-push
 

@@ -128,8 +128,9 @@ def get_bumpversion_config(cfg_file=CONFIG_FILE):
     cfg.read(cfg_file)
 
     if not cfg.has_section('bumpversion') or not cfg.has_option('bumpversion', 'current_version'):
-        LOG.warning(f'invalid bumpversion config detected {cfg_file}')
-        LOG.warning('see github.com/c4urself/bump2version for more details, skipping cfg parse...')
+        LOG.warning(f'invalid bumpversion config detected {cfg_file} skipping cfg parse...')
+        LOG.warning('version_checker --example-config')
+        LOG.warning('or see github.com/c4urself/bump2version for more details')
         return [], []
 
     current_version = cfg.get('bumpversion', 'current_version')

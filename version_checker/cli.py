@@ -25,8 +25,8 @@ import sys
 
 import git
 
-from version_checker.constants import LOG_NAME, CONFIG_FILE, BASE, CURRENT, REPO_PATH, \
-                                      VERSION_FILE, VERSION_REGEX, FILES, FILE_REGEXES
+from version_checker.constants import LOG_NAME, CONFIG_FILE, BASE, CURRENT, REPO_PATH, FILES, \
+                                      VERSION_FILE, VERSION_REGEX, FILE_REGEXES, EXAMPLE_CONFIG
 from version_checker.utils import do_check, do_update, install_hook, get_bumpversion_config
 
 
@@ -77,36 +77,44 @@ def main():
         LOG.warning('bumpversion configs not found, skipping...')
 
     _a = arg_parser.add_argument
+
+    _a('--example-config', '-e', action='store_true',
+       help='Print an example .bumpversion.cfg to stdout')
+
     _a('--install-hook', '-i', choices=['pre-push'], default=None,
-        help='Install version_checker as a git hook (works best with .bumpconfig.cfg)')
+       help='Install version_checker as a git hook (works best with .bumpconfig.cfg)')
     _a('--update', '-u', choices=['major', 'minor', 'patch'], default=None,
-        help='Update versions via bump2version, assumes .bumpconfig.cfg')
+       help='Update versions via bump2version, assumes .bumpconfig.cfg')
     _a('--log-level', '-l', choices=['info', 'debug', 'warning', 'error'], default='info',
-        help='Set the log level for the application')
+       help='Set the log level for the application')
 
     _a('--base', '-b', type=str, default=BASE,
-        help='Branch in version control to check against')
+       help='Branch in version control to check against')
     _a('--current', '-c', type=str, default=CURRENT,
-        help='Git tag/branch/hash to verify')
+       help='Git tag/branch/hash to verify')
     _a('--version-file', '-v', type=str, default=VERSION_FILE,
-        help='File to base all version checks against')
+       help='File to base all version checks against')
     _a('--version-regex', '-r', type=str, default=VERSION_REGEX,
-        help='Regex to extract version out of version file')
+       help='Regex to extract version out of version file')
 
     _a('--files', '-f', nargs='+', default=files,
-        help='Files to check version number')
+       help='Files to check version number')
     _a('--file-regexes', nargs='+', default=file_regexes,
-        help='List of regex for inputted files when checking for version #')
+       help='List of regex for inputted files when checking for version #')
 
     _a('hookargs', nargs=argparse.REMAINDER,
-        help='Positional args which a git hook may provide, we ignore these')
+       help='Positional args which a git hook may provide, we ignore these')
 
     args = arg_parser.parse_args()
 
     LOG.setLevel(_log_name_to_level(args.log_level))
     LOG.debug(args)
 
-    if args.install_hook:
+    if args.example_config:
+        LOG.info(f'Here is an example config you could tailor, then paste into '
+                 f'.bumpversion.cfg: {EXAMPLE_CONFIG}')
+
+    elif args.install_hook:
         install_hook(args.install_hook)
 
     elif args.update:

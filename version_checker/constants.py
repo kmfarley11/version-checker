@@ -27,3 +27,29 @@ _red = lambda s: f'{RED}{s}{NO_COLOR}'
 _grn = lambda s: f'{GREEN}{s}{NO_COLOR}'
 OK = _grn('ok')
 ERROR = _red('error')
+
+# long / help text
+EXAMPLE_CONFIG='''
+[bumpversion]
+current_version = 0.0.3
+
+[bumpversion:file:Readme.md]
+search = version_checker-{current_version}-py3-none-any.whl
+replace = version_checker-{new_version}-py3-none-any.whl
+
+[bumpversion:file:setup.cfg]
+search = version = {current_version}
+replace = version = {new_version}
+
+[bumpversion:file:version.txt]
+
+[bumpversion:file:kustomize/base/service.yaml]
+
+[bumpversion:file:openapi-spec.json]
+search = "version": "{current_version}"
+replace = "version": "{new_version}"
+
+[bumpversion:file:pom.xml]
+search = <version>{current_version}</version> <!--this comment helps bumpversion find my (and only my) version!-->
+replace = <version>{new_version}</version> <!--this comment helps bumpversion find my (and only my) version!-->
+'''
