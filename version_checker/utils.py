@@ -21,15 +21,21 @@ LOG = logging.getLogger(LOG_NAME)
 def do_check(base_commit, current_commit, files, file_regexes):
     '''Checking functionality
 
-    verified the current file versions have been incremented from the base branch
+    Verified the current file versions have been incremented from the base branch
 
     Positional arguments
     base_commit     -- GitPython commit object for base hash to check against
     current_commit  -- GitPython commit object for current hash to check
     files           -- list of file paths with hardcoded versions ([0] = file to synchronize)
     file_regexes    -- list of regexes to check against relative file (in files)
+
+    Returns True if check succeeded
     '''
     LOG.debug(f'{base_commit}, {current_commit}, {files}, {file_regexes}')
+
+    if not files or not file_regexes:
+        return _error('No files or regexes provided!')
+
     version_file = files.pop(0)
     version_regex = file_regexes.pop(0)
 
@@ -44,7 +50,7 @@ def do_check(base_commit, current_commit, files, file_regexes):
         LOG.warning(f'{version_file} not found in base ({base_commit}), assuming new file...')
         new = search_commit_file(current_commit, version_file, version_regex)
     elif not version_file_diff:
-        _error(f'{version_file} change not detected')
+        return _error(f'{version_file} change not detected')
     else:
         # attempt to parse out new & old version from inputted version_file
         _ok(f'{version_file} change detected')
@@ -57,11 +63,11 @@ def do_check(base_commit, current_commit, files, file_regexes):
     if old < new:
         _ok('new version larger than old')
     else:
-        _error('new version smaller than old')
+        return _error('new version smaller than old')
 
     if len(files) == 0:
         LOG.warning(f'No extra file checking inputted, only verfied {version_file}')
-        return
+        return True
 
     # verify any other inputted files match the version_file's contents
     if len(file_regexes) != len(files):
@@ -80,9 +86,10 @@ def do_check(base_commit, current_commit, files, file_regexes):
         else:
             LOG.debug(f'\t{_f}: {file_version}')
     if error_detected:
-        _error('not all files are correct')
+        return _error('not all files are correct')
 
     _ok('all files matched the correct version')
+    return True
 
 
 def do_update(version_part, options='--allow-dirty'):
@@ -104,16 +111,13 @@ def install_hook(hook):
 
     prog_path = shutil.which('version_checker')
     if not prog_path:
-        LOG.error('issue getting version_checker bin path, is it installed?!... {ERROR}')
-        sys.exit(1)
+        _error('issue getting version_checker bin path, is it installed?!', use_long_text=False)
+        return
 
     hook_path = os.path.abspath(os.path.join('.', '.git', 'hooks', hook))
-    if not os.path.exists(prog_path):
-        _error(f'Symlink source source "{prog_path}" not found!')
-    elif os.path.exists(hook_path) or os.path.islink(hook_path):
-        LOG.error(f'Git hook "{hook_path}" already exists!... {ERROR}')
-        LOG.error('Remove the existing hook and re-try if further action is desired.')
-        sys.exit(1)
+    if os.path.exists(hook_path) or os.path.islink(hook_path):
+        _error(f'Git hook "{hook_path}" already exists!\n\tRemove the existing hook '
+                'and re-try if further action is desired.', use_long_text=False)
     else:
         os.symlink(prog_path, hook_path)
         _ok(f'"{prog_path}", installed to "{hook_path}"')
@@ -124,14 +128,22 @@ def get_bumpversion_config(cfg_file=CONFIG_FILE):
 
     returns file, file regexes, and current version to be checked
     '''
-    cfg = configparser.ConfigParser()
-    cfg.read(cfg_file)
-
-    if not cfg.has_section('bumpversion') or not cfg.has_option('bumpversion', 'current_version'):
+    def _warn_invalid():
+        # generator to shorthand warn the user of an invalid config
         LOG.warning(f'invalid bumpversion config detected {cfg_file} skipping cfg parse...')
         LOG.warning('version_checker --example-config')
         LOG.warning('or see github.com/c4urself/bump2version for more details')
         return [], []
+
+    cfg = configparser.ConfigParser()
+
+    try:
+        cfg.read(cfg_file)
+    except configparser.MissingSectionHeaderError:
+        return _warn_invalid()
+
+    if not cfg.has_section('bumpversion') or not cfg.has_option('bumpversion', 'current_version'):
+        return _warn_invalid()
 
     current_version = cfg.get('bumpversion', 'current_version')
     toplevel_options = cfg.options('bumpversion')
@@ -167,6 +179,8 @@ def search_commit_file(git_commit, fpath, search_regex, abort=True):
         return _search_or_error(search_regex, commit_file, abort=abort)
     except KeyError:
         _error(f'file {fpath} not found in the provided git.Commit {git_commit}', abort=abort)
+    except AttributeError:
+        _error(f'provided git.Commit {git_commit} is not valid!', abort=abort)
     return ''
 
 
@@ -202,20 +216,25 @@ def _ok(msg):
     LOG.info(f'{msg}... {OK}')
 
 
-def _error(msg, abort=True):
-    '''Helper to print out an error message and exit (1)'''
+def _error(msg, abort=True, use_long_text=True):
+    '''Helper to print out an error message and exit (1)
+
+    Generically returns empty string, if not aborting via sys.exit...
+    '''
     LOG.error(f'{msg}... {ERROR}')
     if abort:
         LOG.error('Run with "--log-level debug" for more detail')
-        LOG.error('''
-            Otherwise, try bumping your versions i.e.
-                bump2version patch --allow-dirty
-                bump2version patch --help
+        if use_long_text:
+            LOG.error('''
+                Otherwise, try bumping your versions i.e.
+                    bump2version patch --allow-dirty
+                    bump2version patch --help
 
-            Note: this checker will only succeed if the latest commit contains updated versions
-            To bypass it as a hook try using --no-verify but this is NOT preferred...
+                Note: this checker will only succeed if the latest commit contains updated versions
+                To bypass it as a hook try using --no-verify but this is NOT preferred...
 
-            If your files are out-of sync, it is recommended to revert the files per the base branch
-            Then the bump2version program can update them all synchronously
-        ''')
+                If your files are out-of sync, it is recommended to revert the files per the base
+                Then the bump2version program can update them all synchronously
+            ''')
         sys.exit(1)
+    return ''

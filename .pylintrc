@@ -2,7 +2,7 @@
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
-ignore-patterns=setup.py
+ignore-patterns=setup.py,test_.*\.py
 
 
 [MESSAGES CONTROL]

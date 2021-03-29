@@ -29,7 +29,7 @@ OK = _grn('ok')
 ERROR = _red('error')
 
 # long / help text
-EXAMPLE_CONFIG='''
+EXAMPLE_CONFIG = '''
 [bumpversion]
 current_version = 0.0.3
 

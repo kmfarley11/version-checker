@@ -1,24 +1,25 @@
-[bumpversion]
+; bumpversion -> bumpversions on purpose so it doesn't read anything
+;   for testing only...
+
+[bumpversions]
 current_version = 0.1.2
 
-[bumpversion:file:Readme.md]
+[bumpversions:file:Readme.md]
 search = version_checker-{current_version}-py3-none-any.whl
 replace = version_checker-{new_version}-py3-none-any.whl
 
-[bumpversion:file:setup.cfg]
+[bumpversions:file:setup.cfg]
 search = version = {current_version}
 replace = version = {new_version}
 
-[bumpversion:file:version_checker/__init__.py]
+[bumpversions:file:version_checker/examples/version.txt]
 
-[bumpversion:file:version_checker/examples/version.txt]
+[bumpversions:file:version_checker/examples/kustomize/base/service.yaml]
 
-[bumpversion:file:version_checker/examples/kustomize/base/service.yaml]
-
-[bumpversion:file:version_checker/examples/openapi-spec.json]
+[bumpversions:file:version_checker/examples/openapi-spec.json]
 search = "version": "{current_version}"
 replace = "version": "{new_version}"
 
-[bumpversion:file:version_checker/examples/pom.xml]
+[bumpversions:file:version_checker/examples/pom.xml]
 search = <version>{current_version}</version> <!--this comment helps bumpversion find my (and only my) version!-->
 replace = <version>{new_version}</version> <!--this comment helps bumpversion find my (and only my) version!-->
