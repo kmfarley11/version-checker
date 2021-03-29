@@ -1,6 +1,13 @@
 # Version Checker
 
-## Dev
+## Install (non-devs)
+```bash
+sudo apt install python3 python3-pip
+python3 -m pip install version_checker-0.1.2-py3-none-any.whl
+version_checker -h
+```
+
+## Dev (devs-only)
 ```bash
 sudo apt install python3 python3-venv python3-pip
 python3 -m venv .venv
@@ -8,13 +15,8 @@ python3 -m venv .venv
 pip install -e .[dev]
 python3 -m build
 pylint version_checker/
-```
-
-## Install
-```bash
-sudo apt install python3 python3-pip
-python3 -m pip install version_checker-0.1.2-py3-none-any.whl
-version_checker -h
+pytest
+pytest --cov=version_checker.utils tests/ # --cov-report html && firefox htmlcov/index.html
 ```
 
 ## Use

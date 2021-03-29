@@ -99,7 +99,7 @@ def do_update(version_part, options='--allow-dirty'):
     '''
     cmd = f'bump2version {version_part} {options}'
     LOG.info(f"attempting command: '{cmd}'")
-    LOG.info(_bash(cmd))
+    LOG.info(subprocess.check_output(cmd, shell=True).decode())
 
 
 def install_hook(hook):
@@ -185,11 +185,6 @@ def search_commit_file(git_commit, fpath, search_regex, abort=True):
 
 
 # (protected) helpers
-def _bash(cmd):
-    '''Helper to run quick bash command and return its shell output'''
-    return subprocess.check_output(cmd, shell=True).decode()
-
-
 def _get_commit_file(fcommit, fpath):
     '''Helper (shorthand) to extract file contents at a specific commit'''
     return (fcommit.tree / fpath).data_stream.read().decode()

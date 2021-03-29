@@ -111,11 +111,11 @@ def test_search_commit_file_handles_text_not_found(mocker):
 def test_search_commit_file_handles_regex_fail_but_rawtext_match(mocker):
     patched_err = mocker.patch.object(vc_utils, '_error')
     patched__get = mocker.patch.object(vc_utils, '_get_commit_file')
-    patched__get.return_value = 'some content... no regex here[0-9]\asdf!...'
+    patched__get.return_value = 'some content... no regex here[0-9]asdf!...'
 
     # '_' represents dont care (patched out...)
-    ret = vc_utils.search_commit_file('_', '_', 'no regex here', abort=False)
-    assert ret == 'no regex here'
+    ret = vc_utils.search_commit_file('_', '_', 'no regex here[0-9]', abort=False)
+    assert ret == 'no regex here[0-9]'
     patched_err.assert_not_called()
 
 
@@ -175,9 +175,9 @@ def test_install_hook_creates_link_if_dne(mocker):
 
 #region do_update tests
 def test_do_update_calls_bump2version(mocker):
-    patched_bash = mocker.patch.object(vc_utils, '_bash')
+    patched_sp = mocker.patch.object(vc_utils, 'subprocess')
     vc_utils.do_update('minor')
-    patched_bash.assert_called_once_with('bump2version minor --allow-dirty')
+    patched_sp.check_output.assert_called_once_with('bump2version minor --allow-dirty', shell=True)
 #endregion
 
 
