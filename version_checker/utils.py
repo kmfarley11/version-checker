@@ -222,8 +222,9 @@ def _error(msg, abort=True, use_long_text=True):
         if use_long_text:
             LOG.error('''
                 Otherwise, try bumping your versions i.e.
-                    bump2version patch --allow-dirty
                     bump2version patch --help
+                    bump2version patch --allow-dirty
+                    bump2version patch --commit
 
                 Note: this checker will only succeed if the latest commit contains updated versions
                 To bypass it as a hook try using --no-verify but this is NOT preferred...
