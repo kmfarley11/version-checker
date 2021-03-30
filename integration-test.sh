@@ -58,7 +58,7 @@ bump2version patch --commit || exit 1
 
 echo "TEST STEP: manually verify all files changed..."
 cat .bumpversion.cfg | grep -oE 'file:.*[^]]' | grep -oE '[^file:].*' | sort > expected.lst
-git diff ${PREVBRANCH}..HEAD --name-only | grep -v .bumpversion.cfg | sort > actual.lst
+git diff ${BASEBRANCH}..HEAD --name-only | grep -v .bumpversion.cfg | sort > actual.lst
 diff expected.lst actual.lst || exit 1
 rm expected.lst actual.lst
 
