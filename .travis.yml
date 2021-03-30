@@ -9,7 +9,7 @@ install:
   - pip install -e .[dev]
 # command to run tests
 script:
-  - pytest
-  - pylint version-checker
+  - pylint version_checker
   - pytest --cov=version_checker.utils tests/
-# TODO add integration tests? artifact results?
+  - python -m build
+  - bash integration-test.sh

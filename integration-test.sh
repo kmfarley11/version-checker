@@ -68,8 +68,7 @@ git push origin ${NUBRANCH} --dry-run || exit 1
 echo "TEST FINISH"
 
 echo "TEST CLEANUP"
-git checkout ${PREVBRANCH} || exit 1
-git branch -D ${NUBRANCH} || exit 1
+git checkout ${PREVBRANCH} || echo "WARNING: couldn't check out ${PREVBRANCH} not erroring in case expected from detached head..."
+git branch -D ${NUBRANCH}
 
 echo "Done. everything seems ok"
-
