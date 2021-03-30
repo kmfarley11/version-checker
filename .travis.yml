@@ -9,9 +9,10 @@ python:
 install:
   - pip install --upgrade pip pipenv virtualenv
   - pip install -e .[dev]
+  - python -m build .
 # command to run tests
 script:
   - pylint version_checker
   - pytest --cov=version_checker.utils tests/
-  - python -m build .
-  - bash integration-test.sh
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

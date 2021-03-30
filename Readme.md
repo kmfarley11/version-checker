@@ -16,7 +16,7 @@ version_checker -h
 sudo apt install python3 python3-venv python3-pip
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -e .[all]
+pip install -e .[dev]
 python3 -m build
 pylint version_checker/
 pytest
