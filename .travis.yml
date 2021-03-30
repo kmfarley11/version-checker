@@ -7,10 +7,7 @@ python:
 # command to install dependencies
 # simultaneously verifies we can build the wheel & verify some targets
 install:
-  - pip install --upgrade pip
-  - pip install -e .[build]
-  - python -m build .
-  - pip install dist/version_checker-0.1.5-py3-none-any.whl
+  - pip install --upgrade pip pipenv virtualenv
   - pip install -e .[dev]
 # command to run tests
 script:
