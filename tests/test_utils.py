@@ -77,8 +77,7 @@ def test_get_bumpversion_config_handles_valid_config():
 #region search_commit_file tests
 def test_search_commit_file_handles_invalid_file(mocker):
     # note __truediv__ -> '/' operator
-    repo_mock = mock.MagicMock(spec=git.Repo())
-    commit_mock = repo_mock.head.commit()
+    commit_mock = mock.MagicMock(spec=git.Commit)
     commit_mock.tree.__truediv__.side_effect = KeyError('file not found')
 
     patched_err = mocker.patch.object(vc_utils, '_error')
