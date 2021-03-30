@@ -1,6 +1,7 @@
 # Version Checker
 
 [![Travis](https://img.shields.io/travis/kmfarley11/version-checker/master.svg?logo=travis)](https://travis-ci.org/kmfarley11/version-checker)
+[![codecov](https://codecov.io/gh/kmfarley11/version-checker/branch/master/graph/badge.svg?token=IG1MO377GJ)](https://codecov.io/gh/kmfarley11/version-checker)
 
 Synchronize and track all hardcoded versions in a project!
 
