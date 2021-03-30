@@ -1,6 +1,6 @@
 # Version Checker
 
-[![Travis](https://img.shields.io/travis/kmfarley11/version-checker/master.svg?logo=travis)](https://travis-ci.org/kmfarley11/version-checker)
+[![Travis](https://img.shields.io/travis/kmfarley11/version-checker/master.svg?logo=travis)](https://travis-ci.com/kmfarley11/version-checker)
 [![codecov](https://codecov.io/gh/kmfarley11/version-checker/branch/master/graph/badge.svg?token=IG1MO377GJ)](https://codecov.io/gh/kmfarley11/version-checker)
 
 Synchronize and track all hardcoded versions in a project!
@@ -8,7 +8,7 @@ Synchronize and track all hardcoded versions in a project!
 ## Install (non-devs)
 ```bash
 sudo apt install python3 python3-pip
-python3 -m pip install version_checker-0.1.5-py3-none-any.whl
+python3 -m pip install version_checker-0.1.6-py3-none-any.whl
 version_checker -h
 ```
 
