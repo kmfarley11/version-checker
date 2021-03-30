@@ -3,19 +3,19 @@
 # integration-test.sh
 #
 #   Bash script to excercise the version checker utility against a live repo
-#   Expects a virtual environment to be available (python3 -m venv .venv)
+#   Expects python3.6+
 #   DISCLAIMER: Will replace pre-push if exists with version checker
 #
 #   Usage:
 #       bash integration-test.sh
-#       bash integration-test.sh my_custom_venv/
+#       bash integration-test.sh .venv/bin/python
 #
-VENV=${1:-.venv}
-. ${VENV}/bin/activate
+PY=${1:-python}
+${PY} --version | grep -E '3.[6-9]'
 
 # some verification first (python, venv, git)
 if [ ! "$?" -eq "0"  ] ; then
-    echo "Error! virtual env ${VENV} not available"
+    echo "Error! python version ${PY} too old, try with a newer one"
     exit 1
 fi
 
@@ -35,7 +35,7 @@ echo "Replacing whatever is in .git/hooks/pre-push with version checker"
 rm .git/hooks/pre-push
 version_checker -i pre-push || exit 1
 PREVBRANCH=$(git branch | grep -oE '\*.*' | grep -oE '[a-Z0-9]+')
-NUBRANCH=$(python -c "import uuid; print(uuid.uuid4())")
+NUBRANCH=$(${PY} -c "import uuid; print(uuid.uuid4())")
 BASEBRANCH=origin/master
 
 echo "Creating temporary branch for testing... '$NUBRANCH'"

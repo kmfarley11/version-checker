@@ -1,5 +1,9 @@
 # Version Checker
 
+[![Travis](https://img.shields.io/travis/kmfarley11/version-checker/master.svg?logo=travis)](https://travis-ci.org/kmfarley11/version-checker)
+
+Synchronize and track all hardcoded versions in a project!
+
 ## Install (non-devs)
 ```bash
 sudo apt install python3 python3-pip

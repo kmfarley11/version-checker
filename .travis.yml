@@ -7,7 +7,9 @@ python:
 # command to install dependencies
 install:
   - pip install --upgrade pip
-  - pip install -e .[dev]
+  - pip install -e .[build]
+  - python -m build .[dev]
+  - pip install dist/version_checker-0.1.5-py3-none-any.whl
 # command to run tests
 script:
   - pylint version_checker
