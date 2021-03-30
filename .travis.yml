@@ -6,10 +6,11 @@ python:
   - "3.9"
 # command to install dependencies
 install:
+  - pip install --upgrade pip
   - pip install -e .[dev]
 # command to run tests
 script:
   - pylint version_checker
   - pytest --cov=version_checker.utils tests/
-  - python -m build
+  - python -m build .
   - bash integration-test.sh
