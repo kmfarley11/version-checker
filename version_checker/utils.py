@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 
+from packaging import version
 from git.exc import BadName
 
 from version_checker.constants import LOG_NAME, CONFIG_FILE, OK, ERROR, BASES_IF_NONE
@@ -89,7 +90,10 @@ def do_check(base_commit, current_commit, files, file_regexes):
     # verify the change is productive
     LOG.info(f'\told version = {old}')
     LOG.info(f'\tnew version = {new}')
-    if old < new:
+    # Note: may need to find a different / custom parser...
+    #   packaging.version.parse has converted per PEP440, x.y.z is legacy
+    #   and will be deprecated
+    if version.parse(old) < version.parse(new):
         _ok('new version larger than old')
     else:
         return _error('new version smaller than old')
