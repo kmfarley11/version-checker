@@ -1,4 +1,11 @@
 '''
+def test_get_base_commit_handles_valid_input_value():
+    fake_repo = mock.Mock()
+    fake_repo.commit.return_value = 'expect_me'
+    fake_base = 'origin/idk'
+    retval = vc_utils.get_base_commit(fake_repo, fake_base)
+    assert retval == 'expect_me'
+    fake_repo.commit.assert_called_once_with(fake_base)
 Pytests for the public functions of the version_checker code
 '''
 
@@ -8,6 +15,7 @@ import pytest
 import git
 
 import version_checker.utils as vc_utils
+import version_checker.constants as _constants
 from version_checker import __version__ as _vc_version
 
 
@@ -31,6 +39,49 @@ KNOWN_FILE_DEFAULTS = {
 }
 
 BAD_VERSION = '0.0.0'
+#endregion
+
+
+#region get_base_commit tests
+def test_get_base_commit_errors_for_bad_repo(mocker):
+    patched_sys = mocker.patch.object(vc_utils, 'sys')
+    fake_repo = None
+    fake_base = None
+    retval = vc_utils.get_base_commit(fake_repo, fake_base)
+    assert not retval
+    patched_sys.exit.assert_called_once_with(1)
+
+
+def test_get_base_commit_handles_valid_input_value():
+    fake_repo = mock.Mock()
+    fake_repo.commit.return_value = 'expect_me'
+    fake_base = 'origin/idk'
+    retval = vc_utils.get_base_commit(fake_repo, fake_base)
+    assert retval == 'expect_me'
+    fake_repo.commit.assert_called_once_with(fake_base)
+
+
+def test_get_base_commit_attempts_defaults_if_None():
+    fake_repo = mock.Mock()
+    fake_repo.commit.return_value = 'expect_me'
+    fake_base = None
+    retval = vc_utils.get_base_commit(fake_repo, fake_base)
+    assert retval == 'expect_me'
+    fake_repo.commit.assert_called_once_with(_constants.BASES_IF_NONE[0])
+
+
+def test_get_base_commit_errors_for_no_valid_base(mocker):
+    patched_sys = mocker.patch.object(vc_utils, 'sys')
+    fake_repo = mock.Mock()
+    num_bases = len(_constants.BASES_IF_NONE)
+    fake_repo.commit.side_effect = [git.exc.BadName('dne')] * num_bases
+    fake_base = None
+    retval = vc_utils.get_base_commit(fake_repo, fake_base)
+    assert not retval
+    fake_repo.commit.assert_has_calls(
+        list(map(lambda b: mock.call(b), _constants.BASES_IF_NONE))
+    )
+    patched_sys.exit.assert_called_once_with(1)
 #endregion
 
 

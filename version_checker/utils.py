@@ -28,8 +28,11 @@ def get_base_commit(repo, base_input):
     If base_input is None, attempts the possibilities listed in BASE_IF_NONE
         (origin/main & origin/master)
 
-    Returns GitPython commit object if successful, None if invalid
+    Returns GitPython commit object if successful, errors if invalid
     '''
+    if not repo:
+        return _error('Invalid GitPython repo provided!')
+
     if base_input:
         return repo.commit(base_input)
 
@@ -41,8 +44,7 @@ def get_base_commit(repo, base_input):
             return base_commit
         except BadName:
             LOG.warning('%s not detected', possible_base)
-    _error('No VERSION_BASE provided, and default bases not valid!')
-    return None
+    return _error('No VERSION_BASE provided, and default bases not valid!')
 
 
 def do_check(base_commit, current_commit, files, file_regexes):
