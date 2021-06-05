@@ -7,7 +7,7 @@ spec:
  template:
   spec:
    containers:
-    - image: gcr.io/knative-samples/helloworld-go:0.1.8
+    - image: gcr.io/knative-samples/helloworld-go:0.1.9
       env:
         - name: TARGET
           value: "Go Sample v1"
