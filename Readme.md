@@ -72,6 +72,7 @@ I cannot assert that search & replace are regex compatibile, I would strongly re
 ```bash
 # to run manually
 version_checker -h
+VERSION_BASE=origin/non-main-branch version_checker
 
 # to see an example .bumpversion.cfg
 version_checker --example-config
@@ -90,7 +91,7 @@ A few configurations can be modified by environment variables:
 
 Environment Variable | Default | Description
 ------------ | ------------- | -------------
-VERSION_BASE | origin/master | The base branch/commit to check versions against
+VERSION_BASE | origin/main or origin/master | The base branch/commit to check versions against
 VERSION_HEAD | HEAD | The current commit to check versions on
 REPO_PATH | . | The path to the git repo
 VERSION_FILE | .bumpversion.cfg | The config file with version configs to parse

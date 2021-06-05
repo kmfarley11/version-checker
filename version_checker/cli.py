@@ -8,6 +8,7 @@ Sync files containing raw version text, and verify they get bumped from a git ba
 Usage:
     version_checker.py -h
     version_checker.py -l debug
+    VERSION_BASE=origin/non-main version_checker
     version_checker.py -v version.txt -r '([0-9]+\.?){3}'
     version_checker.py -v version.txt -f openapi-spec.json --file-regexes 'version.: \d\.\d\.\d'
 
@@ -27,7 +28,8 @@ import git
 
 from version_checker.constants import LOG_NAME, CONFIG_FILE, BASE, CURRENT, REPO_PATH, FILES, \
                                       VERSION_FILE, VERSION_REGEX, FILE_REGEXES, EXAMPLE_CONFIG
-from version_checker.utils import do_check, do_update, install_hook, get_bumpversion_config
+from version_checker.utils import get_base_commit, do_check, do_update, install_hook, \
+                                  get_bumpversion_config
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -89,7 +91,7 @@ def main():
        help='Set the log level for the application')
 
     _a('--base', '-b', type=str, default=BASE,
-       help='Branch in version control to check against')
+       help='Branch in version control to check against. Tries origin/main & origin/master if None')
     _a('--current', '-c', type=str, default=CURRENT,
        help='Git tag/branch/hash to verify')
     _a('--version-file', '-v', type=str, default=VERSION_FILE,
@@ -124,7 +126,8 @@ def main():
         # for brevity & pylint, package version file & regex with others, pop later...
         files = [args.version_file] + args.files
         file_regexes = [args.version_regex] + args.file_regexes
-        do_check(repo.commit(args.base), repo.commit(args.current), files, file_regexes)
+        base_commit = get_base_commit(repo, args.base)
+        do_check(base_commit, repo.commit(args.current), files, file_regexes)
 
 
 if __name__ == '__main__':

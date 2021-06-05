@@ -11,13 +11,40 @@ import shutil
 import subprocess
 import sys
 
-from version_checker.constants import LOG_NAME, CONFIG_FILE, OK, ERROR
+from git.exc import BadName
+
+from version_checker.constants import LOG_NAME, CONFIG_FILE, OK, ERROR, BASES_IF_NONE
 
 
 LOG = logging.getLogger(LOG_NAME)
 
 
 # utility functions
+def get_base_commit(repo, base_input):
+    '''Obtain the base commit to check against
+
+    Uses an inputted GitPython repo object (git.Repo) to retrieve the base commit
+
+    If base_input is None, attempts the possibilities listed in BASE_IF_NONE
+        (origin/main & origin/master)
+
+    Returns GitPython commit object if successful, None if invalid
+    '''
+    if base_input:
+        return repo.commit(base_input)
+
+    LOG.info('No VERSION_BASE provided, trying: %s', ', '.join(BASES_IF_NONE))
+    for possible_base in BASES_IF_NONE:
+        try:
+            base_commit = repo.commit(possible_base)
+            LOG.info('Using %s', possible_base)
+            return base_commit
+        except BadName:
+            LOG.warning('%s not detected', possible_base)
+    _error('No VERSION_BASE provided, and default bases not valid!')
+    return None
+
+
 def do_check(base_commit, current_commit, files, file_regexes):
     '''Checking functionality
 
