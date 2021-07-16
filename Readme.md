@@ -1,4 +1,4 @@
-# Version Checker
+# Version Checker 0.1.11
 
 [![Travis](https://img.shields.io/travis/kmfarley11/version-checker/main.svg?logo=travis)](https://travis-ci.com/kmfarley11/version-checker)
 [![codecov](https://codecov.io/gh/kmfarley11/version-checker/branch/main/graph/badge.svg?token=IG1MO377GJ)](https://codecov.io/gh/kmfarley11/version-checker)
@@ -31,7 +31,7 @@ bash integration-test.sh
 
 This file is highly recommended to get the most out of this tool.
 Without it you may get varied mileage from this as a git hook & when using bump2version.
-Here's an example
+Here's a simplified example. Use `version_checker -e` for more details
 ```
 [bumpversion]
 current_version = 0.0.3

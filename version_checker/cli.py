@@ -1,12 +1,14 @@
 #!.venv/bin/python
 r'''
-Version Helper
+Version Checker Utility: 0.1.11
 Python utility designed to facilitate version file checks & updates.
 Assumes git and prefers bump2version.
 Sync files containing raw version text, and verify they get bumped from a git base location.
 
 Usage:
     version_checker.py -h
+    version_checker.py -e
+    version_checker.py --readme
     version_checker.py -l debug
     VERSION_BASE=origin/non-main version_checker
     version_checker.py -v version.txt -r '([0-9]+\.?){3}'
@@ -27,7 +29,8 @@ import sys
 import git
 
 from version_checker.constants import LOG_NAME, CONFIG_FILE, BASE, CURRENT, REPO_PATH, FILES, \
-                                      VERSION_FILE, VERSION_REGEX, FILE_REGEXES, EXAMPLE_CONFIG
+                                      VERSION_FILE, VERSION_REGEX, FILE_REGEXES, EXAMPLE_CONFIG, \
+                                      README_CONTENTS
 from version_checker.utils import get_base_commit, do_check, do_update, install_hook, \
                                   get_bumpversion_config
 
@@ -82,6 +85,10 @@ def main():
 
     _a('--example-config', '-e', action='store_true',
        help='Print an example .bumpversion.cfg to stdout')
+    _a('--readme', action='store_true',
+       help='Print the repository Readme to stdout')
+    _a('--version', action='store_true',
+       help='Print the version of the version_checker utility itself to stdout')
 
     _a('--install-hook', '-i', choices=['pre-push'], default=None,
        help='Install version_checker as a git hook (works best with .bumpconfig.cfg)')
@@ -112,9 +119,15 @@ def main():
     LOG.setLevel(_log_name_to_level(args.log_level))
     LOG.debug(args)
 
-    if args.example_config:
+    if args.version:
+        LOG.info('Version Checker Utility: 0.1.11')
+
+    elif args.example_config:
         LOG.info(f'Here is an example config you could tailor, then paste into '
                  f'.bumpversion.cfg: {EXAMPLE_CONFIG}')
+
+    elif args.readme:
+        LOG.info('\n' + README_CONTENTS)
 
     elif args.install_hook:
         install_hook(args.install_hook)

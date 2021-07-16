@@ -29,8 +29,12 @@ _grn = lambda s: f'{GREEN}{s}{NO_COLOR}'
 OK = _grn('ok')
 ERROR = _red('error')
 
-# long / help text
-EXAMPLE_CONFIG = None
+# long / help text & version-checker specific info
+EXAMPLE_CONFIG = ''
 LIB_LOC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 with open(os.path.join(LIB_LOC, '.bumpversion.cfg'), 'r') as _f:
     EXAMPLE_CONFIG = _f.read()
+
+README_CONTENTS = ''
+with open(os.path.join(LIB_LOC, 'Readme.md'), 'r') as _f:
+    README_CONTENTS = _f.read()
