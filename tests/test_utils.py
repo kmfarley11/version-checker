@@ -27,11 +27,12 @@ EMPTY_CFG_FILE = 'tests/ok_config_empty.txt'
 VALID_CFG_FILE = '.bumpversion.cfg'
 
 # based on this repos valid cfg, list the files we expect to use
-#   (and whether to expect them to default or have a custom search)
+#   and whether to expect them to default (True) or have a custom search (False)
 KNOWN_FILE_DEFAULTS = {
     'Readme.md': False,
     'setup.cfg': False,
     'version_checker/__init__.py': True,
+    'version_checker/cli.py': False,
     'version_checker/examples/version.txt': True,
     'version_checker/examples/kustomize/base/service.yaml': True,
     'version_checker/examples/openapi-spec.json': False,
