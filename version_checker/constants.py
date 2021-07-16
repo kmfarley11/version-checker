@@ -30,27 +30,7 @@ OK = _grn('ok')
 ERROR = _red('error')
 
 # long / help text
-EXAMPLE_CONFIG = '''
-[bumpversion]
-current_version = 0.0.3
-
-[bumpversion:file:Readme.md]
-search = version_checker-{current_version}-py3-none-any.whl
-replace = version_checker-{new_version}-py3-none-any.whl
-
-[bumpversion:file:setup.cfg]
-search = version = {current_version}
-replace = version = {new_version}
-
-[bumpversion:file:version.txt]
-
-[bumpversion:file:kustomize/base/service.yaml]
-
-[bumpversion:file:openapi-spec.json]
-search = "version": "{current_version}"
-replace = "version": "{new_version}"
-
-[bumpversion:file:pom.xml]
-search = <version>{current_version}</version> <!--this comment helps bumpversion find my (and only my) version!-->
-replace = <version>{new_version}</version> <!--this comment helps bumpversion find my (and only my) version!-->
-'''
+EXAMPLE_CONFIG = None
+LIB_LOC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+with open(os.path.join(LIB_LOC, '.bumpversion.cfg'), 'r') as _f:
+    EXAMPLE_CONFIG = _f.read()
