@@ -123,11 +123,11 @@ def main():
         LOG.info('Version Checker Utility: 0.1.13')
 
     elif args.example_config:
-        LOG.info(f'Here is an example config you could tailor, then paste into '
-                 f'.bumpversion.cfg: {EXAMPLE_CONFIG}')
+        LOG.info('Here is an example config you could tailor, then paste into '
+                 '.bumpversion.cfg: %s', EXAMPLE_CONFIG)
 
     elif args.readme:
-        LOG.info('\n' + README_CONTENTS)
+        LOG.info('\n%s', README_CONTENTS)
 
     elif args.install_hook:
         install_hook(args.install_hook)

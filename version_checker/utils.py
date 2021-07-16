@@ -61,7 +61,8 @@ def do_check(base_commit, current_commit, files, file_regexes):
 
     Returns True if check succeeded
     '''
-    LOG.debug(f'{base_commit}, {current_commit}, {files}, {file_regexes}')
+    LOG.debug(
+        '%s, %s, %s, %s', str(base_commit), str(current_commit), str(files), str(file_regexes))
 
     if not files or not file_regexes:
         return _error('No files or regexes provided!')
@@ -77,7 +78,8 @@ def do_check(base_commit, current_commit, files, file_regexes):
     new, old = '', ''
 
     if version_file not in base_commit.tree and version_file in current_commit.tree:
-        LOG.warning(f'{version_file} not found in base ({base_commit}), assuming new file...')
+        LOG.warning(
+            '%s not found in base (%s), assuming new file...', version_file, str(base_commit))
         new = search_commit_file(current_commit, version_file, version_regex)
     elif not version_file_diff:
         return _error(f'{version_file} change not detected')
@@ -88,36 +90,37 @@ def do_check(base_commit, current_commit, files, file_regexes):
         new = search_commit_file(current_commit, version_file, version_regex)
 
     # verify the change is productive
-    LOG.info(f'\told version = {old}')
-    LOG.info(f'\tnew version = {new}')
+    LOG.info('\told version = %s', old)
+    LOG.info('\tnew version = %s', new)
     # Note: may need to find a different / custom parser...
     #   packaging.version.parse has converted per PEP440, x.y.z is legacy
     #   and will be deprecated
+    # Should probably hook into the bump2version parser to analyze the components
     if version.parse(old) < version.parse(new):
         _ok('new version larger than old')
     else:
         return _error('new version smaller than old')
 
     if len(files) == 0:
-        LOG.warning(f'No extra file checking inputted, only verfied {version_file}')
+        LOG.warning('No extra file checking inputted, only verfied %s', version_file)
         return True
 
     # verify any other inputted files match the version_file's contents
     if len(file_regexes) != len(files):
         LOG.warning(
-            f'Inputted file regexes didnt match file list size, '
-            f'defaulting to {version_regex}')
+            'Inputted file regexes didnt match file list size, '
+            'defaulting to %s', version_regex)
         file_regexes = [version_regex] * len(files)
 
     error_detected = False
-    LOG.debug(f'checking {files} against regexes {file_regexes}')
+    LOG.debug('checking %s against regexes %s', str(files), str(file_regexes))
     for _f, _r in zip(files, file_regexes):
         file_version = search_commit_file(current_commit, _f, _r, abort=False)
         if new not in file_version:
             _error(f'\t{_f} needs to match {version_file}!', abort=False)
             error_detected = True
         else:
-            LOG.debug(f'\t{_f}: {file_version}')
+            LOG.debug('\t%s: %s', _f, file_version)
     if error_detected:
         return _error('not all files are correct')
 
@@ -131,7 +134,7 @@ def do_update(version_part, options='--allow-dirty'):
     Just calls out to bump2version, relies on a .bumpversion.cfg
     '''
     cmd = f'bump2version {version_part} {options}'
-    LOG.info(f"attempting command: '{cmd}'")
+    LOG.info("attempting command: '%s'", cmd)
     LOG.info(subprocess.check_output(cmd, shell=True).decode())
 
 
@@ -163,7 +166,7 @@ def get_bumpversion_config(cfg_file=CONFIG_FILE):
     '''
     def _warn_invalid():
         # generator to shorthand warn the user of an invalid config
-        LOG.warning(f'invalid bumpversion config detected {cfg_file} skipping cfg parse...')
+        LOG.warning('invalid bumpversion config detected %s skipping cfg parse...', cfg_file)
         LOG.warning('version_checker --example-config')
         LOG.warning('or see github.com/c4urself/bump2version for more details')
         return [], []
@@ -181,7 +184,7 @@ def get_bumpversion_config(cfg_file=CONFIG_FILE):
     current_version = cfg.get('bumpversion', 'current_version')
     toplevel_options = cfg.options('bumpversion')
     replace_dict = {o: cfg.get('bumpversion', o) for o in toplevel_options}
-    LOG.debug(f'toplevel (bumpversion) dict: {replace_dict}')
+    LOG.debug('toplevel (bumpversion) dict: %s', str(replace_dict))
 
     file_regexes = []
     files = [s.split(':')[-1] for s in cfg.sections() if ':file:' in s]
@@ -196,9 +199,9 @@ def get_bumpversion_config(cfg_file=CONFIG_FILE):
             for _k, _v in replace_dict.items():
                 fregex = fregex.replace('{%s}' % _k, _v)
         file_regexes.append(fregex)
-        LOG.debug(f'Added {fregex} for {_f}')
+        LOG.debug('Added %s for %s', fregex, _f)
 
-    LOG.info(f'Successfully parsed {cfg_file}')
+    LOG.info('Successfully parsed %s', cfg_file)
     return files, file_regexes
 
 
@@ -227,12 +230,12 @@ def _search_or_error(regex_str, to_search_str, abort=True):
     '''Helper to do a regex search and return matches, exits program on error'''
     retval = ''
     result = re.search(regex_str, to_search_str)
-    LOG.debug(f'inputted: "{to_search_str}"')
-    LOG.debug(f'search txt: "{regex_str}"')
+    LOG.debug('inputted: "%s"', to_search_str)
+    LOG.debug('search txt: "%s"', regex_str)
     if result:
         retval = result.group(0)
     elif regex_str in to_search_str:
-        LOG.debug(f'regex parse failed, but raw string compare succeeded for "{regex_str}"')
+        LOG.debug('regex parse failed, but raw string compare succeeded for "%s"', regex_str)
         retval = regex_str
     else:
         _error(f'could not find "{regex_str}" in inputted string', abort=abort)
@@ -241,7 +244,7 @@ def _search_or_error(regex_str, to_search_str, abort=True):
 
 def _ok(msg):
     '''Helper to print out an ok message'''
-    LOG.info(f'{msg}... {OK}')
+    LOG.info('%s... %s', msg, OK)
 
 
 def _error(msg, abort=True, use_long_text=True):
@@ -249,7 +252,7 @@ def _error(msg, abort=True, use_long_text=True):
 
     Generically returns empty string, if not aborting via sys.exit...
     '''
-    LOG.error(f'{msg}... {ERROR}')
+    LOG.error('%s... %s', msg, ERROR)
     if abort:
         LOG.error('Run with "--log-level debug" for more detail')
         if use_long_text:
