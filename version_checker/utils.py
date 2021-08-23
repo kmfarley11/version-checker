@@ -86,7 +86,7 @@ def compare_versions(old_version_str, new_version_str, abort=False):
         _ok('new version larger than old')
         return True
 
-    _error('new version smaller than old', abort=abort)
+    _error('new version needs to be greater than old, see semver.org', abort=abort)
     return False
 
 
@@ -288,7 +288,7 @@ def _error(msg, abort=True, use_long_text=True):
     '''
     LOG.error('%s... %s', msg, ERROR)
     if abort:
-        LOG.error('Run with "--log-level debug" for more detail')
+        LOG.error('Run "version_checker --log-level debug" for more detail')
         if use_long_text:
             LOG.error('''
                 Otherwise, try bumping your versions i.e.

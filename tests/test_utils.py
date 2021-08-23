@@ -299,6 +299,35 @@ def test_do_check_handles_file_changed_but_no_version_change(mocker):
     patched_sys.exit.assert_called_once_with(1)
 
 
+def test_do_check_handles_release_and_build_number_addition(mocker):
+    # DISCLAIMER: see semver.org for more details on versioning
+    #   0.0.0-rc.0 < 0.0.0
+    #   0.0.0 < 0.0.1-rc.0
+    patched_sys = mocker.patch.object(vc_utils, 'sys')
+    base_commit_mock = mock.MagicMock(spec=git.Commit)
+    current_commit_mock = mock.MagicMock(spec=git.Commit)
+    blob_mock = mock.MagicMock(spec=git.Blob)
+    blob_mock.b_path = 'version.txt'
+
+    old_ver = '0.0.0'
+    new_ver = '0.0.1-alpha.0'
+
+    patched_ok = mocker.patch.object(vc_utils, '_ok')
+    patched_search = mocker.patch.object(vc_utils, 'search_commit_file')
+    patched_search.side_effect = [old_ver, new_ver]
+
+    files = ['version.txt']
+    file_regexes = [old_ver, old_ver]
+
+    base_commit_mock.tree = ['version.txt']
+    current_commit_mock.tree = ['version.txt']
+    base_commit_mock.diff().iter_change_type.return_value = [blob_mock]
+
+    assert vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    patched_ok.assert_called()
+    patched_sys.exit.assert_not_called()
+
+
 def test_do_check_detects_other_file_mismatch(mocker):
     patched_sys = mocker.patch.object(vc_utils, 'sys')
     base_commit_mock = mock.MagicMock(spec=git.Commit)
