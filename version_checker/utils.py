@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 
-from packaging import version
+import semver
 from git.exc import BadName
 
 from version_checker.constants import LOG_NAME, CONFIG_FILE, OK, ERROR, BASES_IF_NONE
@@ -46,6 +46,45 @@ def get_base_commit(repo, base_input):
         except BadName:
             LOG.warning('%s not detected', possible_base)
     return _error('No VERSION_BASE provided, and default bases not valid!')
+
+
+def compare_versions(old_version_str, new_version_str, abort=False):
+    '''Helper to compare two version strings via semver-python
+
+    Positional arguments
+    old_version_str     -- raw string of old version to compare against
+    new_version_str     -- raw string of new version to compare
+
+    Keyword arguments
+    abort               -- boolean indicating whether to sys.exit(1) in case of errors
+
+    Returns boolean indicating success. May sys.exit(1) if abort is set to True
+    '''
+    old_version, new_version = None, None
+    try:
+        old_version = semver.VersionInfo.parse(old_version_str)
+        new_version = semver.VersionInfo.parse(new_version_str)
+    except ValueError as _exc:
+        LOG.warning('One or more of the version files was un-parsable:', exc_info=_exc)
+
+    # verify the change is productive
+    LOG.info('\told version = %s', old_version)
+    LOG.info('\tnew version = %s', new_version)
+
+    if old_version is None:
+        _ok('old version not detected, assuming first commit with new version')
+        return True
+
+    if new_version is None:
+        _error('new version not detected...', abort=abort)
+        return False
+
+    if old_version < new_version:
+        _ok('new version larger than old')
+        return True
+
+    _error('new version smaller than old', abort=abort)
+    return False
 
 
 def do_check(base_commit, current_commit, files, file_regexes):
@@ -89,17 +128,9 @@ def do_check(base_commit, current_commit, files, file_regexes):
         old = search_commit_file(base_commit, version_file, version_regex)
         new = search_commit_file(current_commit, version_file, version_regex)
 
-    # verify the change is productive
-    LOG.info('\told version = %s', old)
-    LOG.info('\tnew version = %s', new)
-    # Note: may need to find a different / custom parser...
-    #   packaging.version.parse has converted per PEP440, x.y.z is legacy
-    #   and will be deprecated
-    # Should probably hook into the bump2version parser to analyze the components
-    if version.parse(old) < version.parse(new):
-        _ok('new version larger than old')
-    else:
-        return _error('new version smaller than old')
+    if not compare_versions(old, new, abort=True):
+        LOG.error('Version comparison failed')
+        return False
 
     if len(files) == 0:
         LOG.warning('No extra file checking inputted, only verfied %s', version_file)

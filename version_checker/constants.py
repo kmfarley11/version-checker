@@ -32,9 +32,9 @@ ERROR = _red('error')
 # long / help text & version-checker specific info
 EXAMPLE_CONFIG = ''
 LIB_LOC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-with open(os.path.join(LIB_LOC, '.bumpversion.cfg'), 'r') as _f:
+with open(os.path.join(LIB_LOC, '.bumpversion.cfg'), 'r', encoding='ascii') as _f:
     EXAMPLE_CONFIG = _f.read()
 
 README_CONTENTS = ''
-with open(os.path.join(LIB_LOC, 'Readme.md'), 'r') as _f:
+with open(os.path.join(LIB_LOC, 'Readme.md'), 'r', encoding='utf-8') as _f:
     README_CONTENTS = _f.read()
