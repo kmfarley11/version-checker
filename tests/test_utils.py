@@ -232,7 +232,7 @@ def test_do_update_calls_bump2version(mocker):
 #endregion
 
 
-#region do_check tests
+#region do_check tests (coupled with compare_versions tests)
 #   Note: not doing fully strict input validation, maybe eventually but the docstring
 #   is pretty explicit about using GitPython
 def test_do_check_handles_empty_file_list(mocker):
@@ -309,8 +309,7 @@ def test_do_check_detects_other_file_mismatch(mocker):
     old_ver = '0.0.1'
     new_ver = '0.0.2'
     other_file_ver = old_ver
-    
-    patched_ok = mocker.patch.object(vc_utils, '_ok')
+
     patched_search = mocker.patch.object(vc_utils, 'search_commit_file')
     patched_search.side_effect = [old_ver, new_ver, other_file_ver]
 
@@ -377,4 +376,27 @@ def test_do_check_handles_new_file(mocker):
     assert vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
     patched_ok.assert_called()
     patched_sys.exit.assert_not_called()
+
+
+def test_do_check_handles_bad_new_version(mocker):
+    patched_sys = mocker.patch.object(vc_utils, 'sys')
+    base_commit_mock = mock.MagicMock(spec=git.Commit)
+    current_commit_mock = mock.MagicMock(spec=git.Commit)
+    blob_mock = mock.MagicMock(spec=git.Blob)
+    blob_mock.b_path = 'version.txt'
+
+    new_ver = 'completely invalid version string should get caught, logged, and return false'
+
+    patched_search = mocker.patch.object(vc_utils, 'search_commit_file')
+    patched_search.side_effect = [new_ver]
+
+    files = ['version.txt']
+    file_regexes = [_vc_version]
+
+    base_commit_mock.tree = []
+    current_commit_mock.tree = ['version.txt']
+    base_commit_mock.diff().iter_change_type.return_value = [blob_mock]
+
+    assert not vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    patched_sys.exit.assert_called_once_with(1)
 #endregion

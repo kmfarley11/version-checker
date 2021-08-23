@@ -1,2 +1,6 @@
 [run]
-source = version_checker.utils
+source =
+    version_checker.utils
+    tests
+
+command_line = -m pytest --junitxml=report.xml

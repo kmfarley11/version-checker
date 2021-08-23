@@ -22,6 +22,7 @@ python3 -m build
 pylint version_checker/
 pytest
 pytest --cov=version_checker.utils tests/ # --cov-report html && firefox htmlcov/index.html
+# or `coverage run && coverage html`
 bash integration-test.sh
 ```
 

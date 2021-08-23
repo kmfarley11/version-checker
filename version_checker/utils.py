@@ -62,7 +62,10 @@ def compare_versions(old_version_str, new_version_str, abort=False):
     '''
     old_version, new_version = None, None
     try:
-        old_version = semver.VersionInfo.parse(old_version_str)
+        if not old_version_str:
+            LOG.warning('Old version empty, assuming brand new version')
+        else:
+            old_version = semver.VersionInfo.parse(old_version_str)
         new_version = semver.VersionInfo.parse(new_version_str)
     except ValueError as _exc:
         LOG.warning('One or more of the version files was un-parsable:', exc_info=_exc)
@@ -71,13 +74,13 @@ def compare_versions(old_version_str, new_version_str, abort=False):
     LOG.info('\told version = %s', old_version)
     LOG.info('\tnew version = %s', new_version)
 
-    if old_version is None:
-        _ok('old version not detected, assuming first commit with new version')
-        return True
-
     if new_version is None:
         _error('new version not detected...', abort=abort)
         return False
+
+    if old_version is None:
+        _ok('old version not detected, assuming first commit with new version')
+        return True
 
     if old_version < new_version:
         _ok('new version larger than old')

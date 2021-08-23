@@ -61,4 +61,5 @@ build
 # output
 .coverage
 htmlcov
+report.xml
 
