@@ -36,7 +36,7 @@ rm .git/hooks/pre-push
 version_checker -i pre-push || exit 1
 PREVBRANCH=$(git branch | grep -oE '\*.*' | grep -oE '[a-Z0-9]+')
 NUBRANCH=$(${PY} -c "import uuid; print(uuid.uuid4())")
-BASEBRANCH=origin/master
+BASEBRANCH=origin/main
 
 echo "Creating temporary branch for testing... '$NUBRANCH'"
 echo "switching away from ${PREVBRANCH}, basing off $BASEBRANCH"
