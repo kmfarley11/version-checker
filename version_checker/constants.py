@@ -14,7 +14,7 @@ BASE = os.getenv('VERSION_BASE', None)
 BASES_IF_NONE = ['origin/main', 'origin/master']
 CURRENT = os.getenv('VERSION_CURRENT', 'HEAD')
 VERSION_FILE = os.getenv('VERSION_FILE', CONFIG_FILE)
-VERSION_REGEX = os.getenv('VERSION_REGEX', r'([0-9]+\.?){3}')
+VERSION_REGEX = os.getenv('VERSION_REGEX', r'([0-9]+\.?){3}?(\-([a-z]+)\.(\d+))')
 FILES = []
 FILE_REGEXES = []
 

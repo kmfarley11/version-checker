@@ -68,4 +68,4 @@ VERSION_BASE | origin/main or origin/master | The base branch/commit to check ve
 VERSION_HEAD | HEAD | The current commit to check versions on
 REPO_PATH | . | The path to the git repo
 VERSION_FILE | .bumpversion.cfg | The config file with version configs to parse
-VERSION_REGEX | `([0-9]+\.?){3}` | The version regex to search for, changes to this have not been tested much
+VERSION_REGEX | `([0-9]+\.?){3}?(\-([a-z]+)\.(\d+))` | The version regex to search for, _changes to this have not been tested much_

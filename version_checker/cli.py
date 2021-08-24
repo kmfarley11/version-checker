@@ -12,6 +12,7 @@ Usage:
     version_checker.py -l debug
     VERSION_BASE=origin/non-main version_checker
     version_checker.py -v version.txt -r '([0-9]+\.?){3}'
+    version_checker.py -v version.txt -r '([0-9]+\.?){3}?(\-([a-z]+)\.(\d+))'
     version_checker.py -v version.txt -f openapi-spec.json --file-regexes 'version.: \d\.\d\.\d'
 
 Can be used as a simple dev script, or a git-hook:
