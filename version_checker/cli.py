@@ -124,7 +124,7 @@ def main():
 
     elif args.example_config:
         LOG.info('Here is an example config you could tailor, then paste into '
-                 '.bumpversion.cfg: %s', EXAMPLE_CONFIG)
+                 '.bumpversion.cfg: \n%s', EXAMPLE_CONFIG)
 
     elif args.readme:
         LOG.info('\n%s', README_CONTENTS)

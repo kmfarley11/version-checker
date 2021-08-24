@@ -1,0 +1,43 @@
+[bumpversion]
+current_version = 0.2.2-alpha.0
+parse = (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(\-(?P<pre>[a-z]+)\.(?P<build>\d+))?
+serialize = 
+	{major}.{minor}.{patch}-{pre}.{build}
+	{major}.{minor}.{patch}
+
+[bumpversion:part:pre]
+optional_value = _
+first_value = _
+values = 
+	_
+	dev
+	alpha
+	beta
+	gamma
+	delta
+
+[bumpversion:file:Readme.md]
+search = version_checker-{current_version}-py3-none-any.whl
+replace = version_checker-{new_version}-py3-none-any.whl
+
+[bumpversion:file:setup.cfg]
+search = version = {current_version}
+replace = version = {new_version}
+
+[bumpversion:file:version_checker/__init__.py]
+
+[bumpversion:file:version_checker/cli.py]
+search = Version Checker Utility: {current_version}
+replace = Version Checker Utility: {new_version}
+
+[bumpversion:file:version_checker/examples/version.txt]
+
+[bumpversion:file:version_checker/examples/kustomize/base/service.yaml]
+
+[bumpversion:file:version_checker/examples/openapi-spec.json]
+search = "version": "{current_version}"
+replace = "version": "{new_version}"
+
+[bumpversion:file:version_checker/examples/pom.xml]
+search = <version>{current_version}</version> <!--this comment helps bumpversion find my (and only my) version!-->
+replace = <version>{new_version}</version> <!--this comment helps bumpversion find my (and only my) version!-->
