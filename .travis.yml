@@ -1,18 +1,24 @@
 language: python
 python:
-  - "3.6"
-  - "3.7"
-  - "3.8"
-  - "3.9"
-# command to install dependencies
-# simultaneously verifies we can build the wheel & verify some targets
+- '3.6'
+- '3.7'
+- '3.8'
+- '3.9'
+- '3.10'
+- '3.11'
 install:
-  - pip install --upgrade pip pipenv virtualenv
-  - pip install -e .[dev]
-  - python -m build .
-# command to run tests
+- pip install --upgrade pip pipenv virtualenv
+- pip install -e .[dev]
+- python -m build .
 script:
-  - pylint version_checker
-  - pytest --cov=version_checker.utils tests/
+- pylint version_checker
+- pytest --cov=version_checker.utils tests/
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+- bash <(curl -s https://codecov.io/bash)
+deploy:
+  provider: pypi
+  username: __token__
+  password:
+    secure: efcrxkRyN8kB3SZ2r5amNerePVDBas0VpoWS9h0JhiVpsKOpKiYLFxS75omQez9ZhyDCsJ4LiRsydGJlJHrV7PZl4A7G/ZSleY//N6J/A5dKezH5yknRguYkNYmCPTbXk0cy+gQeWEFXhu12g4qO124VccQ3z6jQWzeSfTfwOPnAL7yTz1QgaUqXCjman2V5F71FcHBMHLTFO/SUbqJ7z14uUbU8dnz+tuIyN2oieGogQG/svxpB1NZleNVFLWE7MwjTteDt+FFWWFPD4R+ZWLn2jTifepychyXVZWZAhf7kEQhSW0mrR/bMC5rZfZ0XZw1vY4iVhcfz+qzpKi8S1jdlX7oUh75FjVfKknXza2KS5hOLt/e8W2+Btd2AsyGTW/ZXkfmQooWdLWmdsiF2ncHmqbUW7QZAfBBkrvj2ql2aEipmDtrNvSiPEDY9wwih/9O8Xp1k7garChCbceMLN2nR6cJ9j5eysd5WZBx31dccDZcicT/GSqh6j2ncXRlDjC6/3Jeicpt7c8euaftrFwZPZ1eIOKZ5rmkThBs1+MKRdpLYr+BhzyuQ0kg1rl+Na1152MttAYbgftecg9Uk1CAqmO4FVkNAN/sO4iRATflHGd2TyQPFPHoQvafsgIo3TK9gGBFlyMrw4nG4B/z9bwcgQIF8SZTI6QDHYAgO99E=
+  on:
+    tags: true
