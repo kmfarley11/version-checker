@@ -1,6 +1,7 @@
 language: python
 dist: focal
 python:
+- '3.6'
 - '3.7'
 - '3.8'
 - '3.9'
@@ -20,3 +21,4 @@ deploy:
   password: ${PYPI_TOKEN}
   on:
     tags: true
+    python: '3.10'
