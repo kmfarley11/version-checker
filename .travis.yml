@@ -1,5 +1,5 @@
 language: python
-dist: 'focal'
+dist: focal
 python:
 - '3.6'
 - '3.7'
@@ -19,6 +19,6 @@ deploy:
   provider: pypi
   username: __token__
   password:
-    secure: efcrxkRyN8kB3SZ2r5amNerePVDBas0VpoWS9h0JhiVpsKOpKiYLFxS75omQez9ZhyDCsJ4LiRsydGJlJHrV7PZl4A7G/ZSleY//N6J/A5dKezH5yknRguYkNYmCPTbXk0cy+gQeWEFXhu12g4qO124VccQ3z6jQWzeSfTfwOPnAL7yTz1QgaUqXCjman2V5F71FcHBMHLTFO/SUbqJ7z14uUbU8dnz+tuIyN2oieGogQG/svxpB1NZleNVFLWE7MwjTteDt+FFWWFPD4R+ZWLn2jTifepychyXVZWZAhf7kEQhSW0mrR/bMC5rZfZ0XZw1vY4iVhcfz+qzpKi8S1jdlX7oUh75FjVfKknXza2KS5hOLt/e8W2+Btd2AsyGTW/ZXkfmQooWdLWmdsiF2ncHmqbUW7QZAfBBkrvj2ql2aEipmDtrNvSiPEDY9wwih/9O8Xp1k7garChCbceMLN2nR6cJ9j5eysd5WZBx31dccDZcicT/GSqh6j2ncXRlDjC6/3Jeicpt7c8euaftrFwZPZ1eIOKZ5rmkThBs1+MKRdpLYr+BhzyuQ0kg1rl+Na1152MttAYbgftecg9Uk1CAqmO4FVkNAN/sO4iRATflHGd2TyQPFPHoQvafsgIo3TK9gGBFlyMrw4nG4B/z9bwcgQIF8SZTI6QDHYAgO99E=
+    secure: NgTI6WKggUt/TGoWdIlyna42QB1B4z/k2G8x54lkKyaJ/iwkQWKDc72m2b28qSaiarfrzhNyespIFP1Vq1HIe4FpQIPo/c04ZzV6dLG+aSPTuV102ZBAIMFsFDGP/oDrUgw95b8crDqGNRWo4pO+uBlIDJ69W/tzE/Rk83OSM1/mrLesugAEEB0eG2HN7epDyCZyd8NqbctmnvjOtkH9uaN2aLJyrE9Foy/sgQHUo2UNIwJwYveQaNYMtjw+q/+p8GLi8g/DEMujPTt8FtTYmTS/HLElt2Fgk/h7Q6Yw9qjVFRVu8pMhzwrQQIW7pcOaG8RDkSQ2F6UGd7Fy4/zZVufxpw9k2T6RoNsNXL9ALaAvTxZkXBayrPG0UDnNeoOD4JtGj9M9BOJffoqyNH/zMpj1pXvvll2alEm2qIiC7AGk+l+8XlitNHfPc4kbdZ6dD///FTo6q6QdN36Bz9JAGaJfmjTOUbeliUh2guC0nMzOFoJX3C5GZfok8AJc+7oMqCl+8Bd4qvBdB/oiVn9LCAuroht28acymmQRhNAnDU8QRlIELW2Zz/R4OYeRuAly0h8Mgus2bVQOx/t9fu3Zc19X0ljrQY4DHm0iN1N0Ufzr0DClI5ULEStJM+VNVkAj7CwY9Y+c0nhoTRiuGtrV+5n9PVzxPptN+VjoOHHk9rs=
   on:
     tags: true
