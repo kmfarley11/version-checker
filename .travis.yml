@@ -16,8 +16,7 @@ after_success:
 - bash <(curl -s https://codecov.io/bash)
 deploy:
   provider: pypi
-  username: __token__
-  password:
-    secure: HbXhJ7QkBbIWiPEkRSgcwfzFXYOFNzZR+n4WwlRMNbe7eEFV0d10Z6txFoRlw3O9Hc+h7HJ42fv9u4WWJGXkF8EXkPEXF/hJgOP1u+hpI0F2xikCUSvsVuNBu/R8WHVarLlpvSgWpuETuoCJxgA5GlTN5rEpmbJYFrwH7VlvzlR4zy9foRhc2jHdeexyq+kFAmo27iTliCPLNg5xORHnA0Sjo7y6nddrjY57/P7aN/vPITT8A6xSwPVA0yvnooIUsHvj8bi9qkAhp9llJC3B0G+AdmRkKYhaPvb1+Sn74H5+n7j3ccQBZXcT1CmTRhEuXDaDyYN3W5+mzv9q7h+V4ikQoMtp1cF9RUEPVDMdaWa5+WLU2hPpfuwypkKAVYM1WHUwxdOdkEwTeRlu5ns0DO7ZT4GTcT5oL1iPNqJZFtTP1nSETYTXvJZuRdnmmkXDAabgrfwNf52/ysAHIivKbxHC5/C1Z7n5Gmdu6iaNUe9FLUnYnUg5cr37BxhE8NiJ9LjJevx97gUX9WY6t1j1+tiVE32FGJs+EsspbYFNPIv9yuCbUYqEzA99PWnBTMD2jCNO3IYc9+Nlo6MnOc4vBbhYFjHZaRuGGXBDk4dtfaHDo6JFD9radiUIr/Y1XkJfCB/88ZQKtDOPZ+zLgghD+tMyttvBuvfOmFmLIJ2jhI8=
+  username: "__token__"
+  password: "pypi-AgEIcHlwaS5vcmcCJDg0OThjN2MzLTM0M2EtNDQ2Yy1iMWExLTI3NGM3NWRiZDU5NAACHFsxLFsiYmFzZS12ZXJzaW9uLWNoZWNrZXIiXV0AAixbMixbIjk2NmRjM2JhLTI4ZmItNGMwYy1iNTY4LTU0MmQwMjQwZTE0YyJdXQAABiD4Cre2qeXGpC1DsAMwTUkkTKzSd4-VJL4WfPlX-LA5HA"
   on:
     tags: true
