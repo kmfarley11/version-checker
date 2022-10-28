@@ -28,4 +28,4 @@ bash integration-test.sh
 ```
 
 ## Usage
-See [version_checker/Readme.md] for usage details.
+See [version_checker/Readme.md](version_checker/Readme.md) for usage details.
