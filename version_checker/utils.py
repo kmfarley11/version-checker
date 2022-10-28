@@ -231,7 +231,7 @@ def get_bumpversion_config(cfg_file=CONFIG_FILE):
             # this'd be easier if bump2version used interpolation but they dont...
             #   so we need to replace any {keys} at the bumpversion level with the values provided
             for _k, _v in replace_dict.items():
-                fregex = fregex.replace('{%s}' % _k, _v)
+                fregex = fregex.replace(str(_k), _v)
         file_regexes.append(fregex)
         LOG.debug('Added %s for %s', fregex, _f)
 

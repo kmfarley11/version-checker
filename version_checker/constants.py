@@ -6,6 +6,9 @@ Defaults and globals to be used by version checker software
 import os
 
 
+# pylint: disable=unnecessary-lambda-assignment
+#   allow lambdas in this file, avoid full fcn declarations...
+#
 # tries to find .bumpversion.cfg first to load globals, then uses args
 CONFIG_FILE = os.getenv('VERSION_CONFIG_FILE', '.bumpversion.cfg')
 
