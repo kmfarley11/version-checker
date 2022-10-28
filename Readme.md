@@ -9,7 +9,7 @@ Versions specified in .bumpversion.cfg are compared to those hosted in a baselin
 ## User install
 ```bash
 sudo apt install python3 python3-pip
-python3 -m pip install version_checker-0.2.2-beta.2-py3-none-any.whl
+python3 -m pip install version_checker-0.2.2-beta.3-py3-none-any.whl
 version_checker -h
 ```
 

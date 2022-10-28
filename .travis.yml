@@ -1,7 +1,6 @@
 language: python
 dist: focal
 python:
-- '3.6'
 - '3.7'
 - '3.8'
 - '3.9'
@@ -17,7 +16,8 @@ after_success:
 - bash <(curl -s https://codecov.io/bash)
 deploy:
   provider: pypi
-  username: __token__
-  password: "pypi-AgEIcHlwaS5vcmcCJDljNzI0NzliLTJkMGEtNGI5My1iMWY2LTQyNjIzMzM3MmMwMgACKlszLCJjZmY3YjlmZi03MGZmLTQ5N2EtYTI4MC1jMjY0NTUzMjQ1MTAiXQAABiBgGtxxYhRnG5GLVveqSG7aRhhktkx0MS6TltmgODumnw"
+  username: kmfarley11
+  password:
+    secure: LYtZjrL4gD5tRgkLO+XdmDjKGl+IGVQvY3GvMvZ75ik25S26GlsJP2wQ4E2SU/9Sr8o090pVvIGnJBGtXbpD5ozpFTk1ymx4n+OS04i8eOTdUl4gdsUoIhM2Q7vuVFPcHqCFDh/+d8buW2zxqUirjB0ndtaON+sSUu2JYpq1NMpjEGXWjzlbe+SvWBFsJAjxIuoz7ZRwdyrA30FjmxiUirtbmuIpyZnk3+5cXcrJ7OIOYQ8OIOrLAmYz41izXUThF1xHiTaE3i1aOFsgyzodUp9T23I0v02dryoK+XTpNJf1rq28XoXAh5PdZfXroni4u96EdRlOG0dIoGb9UlmUu/rF/7PauiaNwpjw+gDgk2s+H5q9HwQmSmjWyhA3h5Hdp93i0W/LfuaCRLW9XL4zSuJ05CBLw/uOX2nNls59X6zpsxuG6Ut0bw6/E1A9Fm+pzfUAs02QpgX1QhSjEbvDOecNMY1jDW7v6armnAKXly3vpJTraK4WZLWxz9QgCQyOR0UnJGarY1DFrpg6hhmRtQzYat4Zt2I5q6M4RnpKxu6683+hfUNrHGb/NhVWZugBtVyjPncNMepMZZ3wzYsPti5gfBhS5QzabeS8L+itqUXSYL3TdWPzjOd78aFVPR6L3MVstvUf6Z04XVPvNnV3Nqmt+fhW4g82/Pbui+8k8ZU=
   on:
     tags: true
