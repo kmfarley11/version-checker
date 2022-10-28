@@ -16,7 +16,7 @@ after_success:
 - bash <(curl -s https://codecov.io/bash)
 deploy:
   provider: pypi
-  username: "__token__"
-  password: "pypi-AgEIcHlwaS5vcmcCJDg0OThjN2MzLTM0M2EtNDQ2Yy1iMWExLTI3NGM3NWRiZDU5NAACHFsxLFsiYmFzZS12ZXJzaW9uLWNoZWNrZXIiXV0AAixbMixbIjk2NmRjM2JhLTI4ZmItNGMwYy1iNTY4LTU0MmQwMjQwZTE0YyJdXQAABiD4Cre2qeXGpC1DsAMwTUkkTKzSd4-VJL4WfPlX-LA5HA"
+  username: __token__
+  password: pypi-AgEIcHlwaS5vcmcCJDg0OThjN2MzLTM0M2EtNDQ2Yy1iMWExLTI3NGM3NWRiZDU5NAACHFsxLFsiYmFzZS12ZXJzaW9uLWNoZWNrZXIiXV0AAixbMixbIjk2NmRjM2JhLTI4ZmItNGMwYy1iNTY4LTU0MmQwMjQwZTE0YyJdXQAABiD4Cre2qeXGpC1DsAMwTUkkTKzSd4-VJL4WfPlX-LA5HA
   on:
     tags: true
