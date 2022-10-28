@@ -1,5 +1,6 @@
 # (Base) Version Checker
 
+[![PyPI version](https://badge.fury.io/py/base-version-checker.svg)](https://badge.fury.io/py/base-version-checker)
 [![Travis](https://img.shields.io/travis/kmfarley11/version-checker/main.svg?logo=travis)](https://travis-ci.com/kmfarley11/version-checker)
 [![codecov](https://codecov.io/gh/kmfarley11/version-checker/branch/main/graph/badge.svg?token=IG1MO377GJ)](https://codecov.io/gh/kmfarley11/version-checker)
 
@@ -25,6 +26,15 @@ pytest
 pytest --cov=version_checker.utils tests/ # --cov-report html && firefox htmlcov/index.html
 # or `coverage run && coverage html`
 bash integration-test.sh
+```
+
+### Creating a new pypi release
+New pypi releases are triggered by tags:
+```bash
+git checkout main
+bump2version <major|minor|patch|pre|build> --commit --tag
+git push
+git push --tags
 ```
 
 ## Usage
