@@ -17,7 +17,6 @@ after_success:
 deploy:
   provider: pypi
   username: __token__
-  password:
-    secure: "mi9oBV5jVJPDGOsl3ggaZxX1sggwLzUQeVnigjAYU/1YwYRetR7c6vrLpuHJ1Qozb8WZEdWKo6pt4hjCLV4W0XCxvMirlKbdczNGu/ItUz9dIAPiaPesAFORBS/KxGhZCPFeZ+CY/fInUQiU7cj+IX4wuXX6gkndZGCSQsumU+z/ggoxhopBPCMnfq8eY72lON7FuRKMiEt2KF5C9eZpwHl/lp2oyyxqjm2eILjkJIVqBIhBz5I3bKgCcgTbS5PGqDRfgHs4y6xQwa+DK9YeT3m9aLeRH5My0tWGPW4Yy9KflUk4kBI7RMXBHNQkIUNlzZzmiAQ+4vZBGAnDrio37PqiKyOUswaSVolBumo/14YQUut2Z+/TIjvFJcqycbkdegcx8LvEEU5PV7ws3G7UTaduUnnS9xRVmlLo/uTVMdXS/srPQ2iCpCGn8x9/jN52gHRKNb8zWi5gv6UGQ3eF37xHQgNTwXnFhf//+yQ8C+KZPfvHg5RIzPaOp2/RpsNNlApeTNPXUV3LexFJ8U22BBIPTieqh881RuOUgCxY3gNRDYyFcDBaK5GlpkKHRt48IRhuxp85/RcZwcUCi7GYiMNQGGa9l7+7mNacVOWNqxm9i/sElxcG4zVWuCqXQv6TUMVzV7TaMesDx7bk3J4HfoMvqJ4Ik/s4hPFgasVxIS0="
+  password: ${PYPI_TOKEN}
   on:
     tags: true
