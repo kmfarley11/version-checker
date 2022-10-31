@@ -33,6 +33,7 @@ KNOWN_FILE_DEFAULTS = {
     'setup.cfg': False,
     'version_checker/__init__.py': True,
     'version_checker/cli.py': False,
+    'version_checker/examples/.env': False,
     'version_checker/examples/version.txt': True,
     'version_checker/examples/kustomize/base/service.yaml': True,
     'version_checker/examples/openapi-spec.json': False,
