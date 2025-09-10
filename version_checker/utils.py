@@ -236,6 +236,10 @@ def get_bumpversion_config(cfg_file=CONFIG_FILE):
         file_regexes.append(fregex)
         LOG.debug('Added %s for %s', fregex, _f)
 
+    # make files relative to cwd if .bumpversion.cfg is not in cwd
+    config_dirs = os.path.dirname(cfg_file)
+    files = [os.path.join(config_dirs, f) if config_dirs else f for f in files]
+
     LOG.info('Successfully parsed %s', cfg_file)
     return files, file_regexes
 

@@ -11,7 +11,7 @@
 #       bash integration-test.sh .venv/bin/python
 #
 PY=${1:-python}
-${PY} --version | grep -E '3.[6-9]'
+${PY} --version | grep -E '3\.(6|7|8|9|10|11|12)'
 
 # some verification first (python, venv, git)
 if [ ! "$?" -eq "0"  ] ; then

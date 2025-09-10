@@ -43,7 +43,7 @@ LOG = logging.getLogger(LOG_NAME)
 def _get_repo(repo_path=REPO_PATH):
     '''Helper to verify a repo and return the git.Repo object'''
     try:
-        return git.Repo(repo_path)
+        return git.Repo(repo_path, search_parent_directories=True)
     except git.exc.InvalidGitRepositoryError:
         LOG.critical('This utility must be run from the root of a git repository!')
         sys.exit(1)
@@ -141,6 +141,11 @@ def main():
         files = [args.version_file] + args.files
         file_regexes = [args.version_regex] + args.file_regexes
         base_commit = get_base_commit(repo, args.base)
+
+        # make files relative to repo root if cwd is not the repo root
+        cwd_repo_path_diff = os.path.relpath(os.getcwd(), repo.working_tree_dir)
+        files = [os.path.normpath(os.path.join(cwd_repo_path_diff, _f)) for _f in files]
+
         do_check(base_commit, repo.commit(args.current), files, file_regexes)
 
 
