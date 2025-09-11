@@ -41,6 +41,11 @@ KNOWN_FILE_DEFAULTS = {
 }
 
 BAD_VERSION = '0.0.0'
+
+class DiffStub(list):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.iter_change_type = mock.MagicMock()
 #endregion
 
 
@@ -269,17 +274,18 @@ def test_do_check_handles_file_not_changed(mocker):
     base_commit_mock.tree = ''
     base_commit_mock.diff.iter_change_type.return_value = ''
     
-    assert not vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
-    patched_sys.exit.assert_called_once_with(1)
-    patched_ok.assert_not_called()
+    assert vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    patched_ok.assert_called_once()
+    patched_sys.exit.assert_not_called()
 
 
 def test_do_check_handles_file_changed_but_no_version_change(mocker):
     patched_sys = mocker.patch.object(vc_utils, 'sys')
+    patched_sys.exit.side_effect = RuntimeError('sys.exit called')
     base_commit_mock = mock.MagicMock(spec=git.Commit)
     current_commit_mock = mock.MagicMock(spec=git.Commit)
     blob_mock = mock.MagicMock(spec=git.Blob)
-    blob_mock.b_path = 'version.txt'
+    blob_mock.b_path = 'file.txt'
 
     old_ver = _vc_version
     new_ver = _vc_version
@@ -293,10 +299,14 @@ def test_do_check_handles_file_changed_but_no_version_change(mocker):
 
     base_commit_mock.tree = ['version.txt']
     current_commit_mock.tree = ['version.txt']
-    base_commit_mock.diff().iter_change_type.return_value = [blob_mock]
+
+    diff_stub = DiffStub([blob_mock])
+    base_commit_mock.diff.return_value = diff_stub
+    diff_stub.iter_change_type.return_value = [blob_mock]
     
-    assert not vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
-    patched_ok.assert_called_once()
+    with pytest.raises(RuntimeError, match='sys.exit called'):
+        vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    patched_ok.not_called()
     patched_sys.exit.assert_called_once_with(1)
 
 
@@ -331,6 +341,7 @@ def test_do_check_handles_release_and_build_number_addition(mocker):
 
 def test_do_check_detects_other_file_mismatch(mocker):
     patched_sys = mocker.patch.object(vc_utils, 'sys')
+    patched_sys.exit.side_effect = RuntimeError('sys.exit called')
     base_commit_mock = mock.MagicMock(spec=git.Commit)
     current_commit_mock = mock.MagicMock(spec=git.Commit)
     blob_mock = mock.MagicMock(spec=git.Blob)
@@ -346,12 +357,20 @@ def test_do_check_detects_other_file_mismatch(mocker):
     files = ['version.txt', 'some_other_file.txt']
     file_regexes = [_vc_version]
 
+    patched_log = mocker.patch.object(vc_utils, 'LOG')
+    patched_ok = mocker.patch.object(vc_utils, '_ok')
     base_commit_mock.tree = ['version.txt']
     current_commit_mock.tree = ['version.txt']
-    base_commit_mock.diff().iter_change_type.return_value = [blob_mock]
+    diff_stub = DiffStub([blob_mock])
+    base_commit_mock.diff.return_value = diff_stub
+    diff_stub.iter_change_type.return_value = [blob_mock]
     
-    assert not vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    with pytest.raises(RuntimeError, match='sys.exit called'):
+        vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    patched_ok.not_called()
     patched_sys.exit.assert_called_once_with(1)
+    patched_log.error.assert_called()
+    assert 'needs to match' in patched_log.error.call_args_list[0].args[1]
 
 
 def test_do_check_verifies_all_version_changes(mocker):
@@ -375,7 +394,9 @@ def test_do_check_verifies_all_version_changes(mocker):
 
     base_commit_mock.tree = ['version.txt']
     current_commit_mock.tree = ['version.txt']
-    base_commit_mock.diff().iter_change_type.return_value = [blob_mock]
+    diff_stub = DiffStub([blob_mock])
+    base_commit_mock.diff.return_value = diff_stub
+    diff_stub.iter_change_type.return_value = [blob_mock]
     
     assert vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
     patched_sys.exit.not_called()
@@ -397,11 +418,13 @@ def test_do_check_handles_new_file(mocker):
     patched_search.side_effect = [old_ver, new_ver]
 
     files = ['version.txt']
-    file_regexes = [_vc_version]
+    file_regexes = [_vc_version, _vc_version]
 
     base_commit_mock.tree = []
     current_commit_mock.tree = ['version.txt']
-    base_commit_mock.diff().iter_change_type.return_value = [blob_mock]
+    diff_stub = DiffStub([blob_mock])
+    base_commit_mock.diff.return_value = diff_stub
+    diff_stub.iter_change_type.return_value = [blob_mock]
     
     assert vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
     patched_ok.assert_called()
@@ -410,6 +433,7 @@ def test_do_check_handles_new_file(mocker):
 
 def test_do_check_handles_bad_new_version(mocker):
     patched_sys = mocker.patch.object(vc_utils, 'sys')
+    patched_sys.exit.side_effect = RuntimeError('sys.exit called')
     base_commit_mock = mock.MagicMock(spec=git.Commit)
     current_commit_mock = mock.MagicMock(spec=git.Commit)
     blob_mock = mock.MagicMock(spec=git.Blob)
@@ -417,6 +441,8 @@ def test_do_check_handles_bad_new_version(mocker):
 
     new_ver = 'completely invalid version string should get caught, logged, and return false'
 
+    patched_log = mocker.patch.object(vc_utils, 'LOG')
+    patched_ok = mocker.patch.object(vc_utils, '_ok')
     patched_search = mocker.patch.object(vc_utils, 'search_commit_file')
     patched_search.side_effect = [new_ver]
 
@@ -425,8 +451,60 @@ def test_do_check_handles_bad_new_version(mocker):
 
     base_commit_mock.tree = []
     current_commit_mock.tree = ['version.txt']
-    base_commit_mock.diff().iter_change_type.return_value = [blob_mock]
+    diff_stub = DiffStub([blob_mock])
+    base_commit_mock.diff.return_value = diff_stub
+    diff_stub.iter_change_type.return_value = [blob_mock]
 
-    assert not vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    with pytest.raises(RuntimeError, match='sys.exit called'):
+        vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    patched_ok.not_called()
     patched_sys.exit.assert_called_once_with(1)
+    patched_log.error.assert_called()
+    assert patched_log.error.call_args_list[0].args[1] == 'New version not detected...'
+
+def test_do_check_handles_new_version_less_than_old_version(mocker):
+    patched_sys = mocker.patch.object(vc_utils, 'sys')
+    patched_sys.exit.side_effect = RuntimeError('sys.exit called')
+    base_commit_mock = mock.MagicMock(spec=git.Commit)
+    current_commit_mock = mock.MagicMock(spec=git.Commit)
+    blob_mock = mock.MagicMock(spec=git.Blob)
+    blob_mock.b_path = 'version.txt'
+
+    old_ver = '0.0.2'
+    new_ver = '0.0.1'    
+
+    patched_log = mocker.patch.object(vc_utils, 'LOG')
+    patched_ok = mocker.patch.object(vc_utils, '_ok')
+    patched_search = mocker.patch.object(vc_utils, 'search_commit_file')
+    patched_search.side_effect = [old_ver, new_ver]
+
+    files = ['version.txt']
+    file_regexes = [_vc_version]
+
+    base_commit_mock.tree = ['version.txt']
+    current_commit_mock.tree = ['version.txt']
+    diff_stub = DiffStub([blob_mock])
+    base_commit_mock.diff.return_value = diff_stub
+    diff_stub.iter_change_type.return_value = [blob_mock]
+
+    with pytest.raises(RuntimeError, match='sys.exit called'):
+        vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
+    patched_ok.not_called()
+    patched_sys.exit.assert_called_once_with(1)
+    patched_log.error.assert_called()
+    assert patched_log.error.call_args_list[0].args[1] == 'New version needs to be greater than old, see semver.org'
+
+def test_comprare_versions_returns_false_for_invalid_new_version(mocker):
+    patched_err = mocker.patch.object(vc_utils, '_error')
+    old_ver = '0.0.1'
+    new_ver = 'not a version'
+    assert not vc_utils.compare_versions(old_ver, new_ver, abort=False)
+    patched_err.assert_called_once_with('New version not detected...', abort=False)
+
+def test_compare_versions_returns_false_for_new_version_less_than_old(mocker):
+    patched_err = mocker.patch.object(vc_utils, '_error')
+    old_ver = '0.0.2'
+    new_ver = '0.0.1'
+    assert not vc_utils.compare_versions(old_ver, new_ver, abort=False)
+    patched_err.assert_called_once_with('New version needs to be greater than old, see semver.org', abort=False)
 #endregion

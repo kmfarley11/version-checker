@@ -80,7 +80,7 @@ def main():
     if os.path.exists(CONFIG_FILE) and os.path.isfile(CONFIG_FILE):
         files, file_regexes = get_bumpversion_config(cfg_file=CONFIG_FILE)
     else:
-        LOG.warning('bumpversion configs not found, skipping...')
+        LOG.warning('Bumpversion configs not found, skipping...')
 
     _a = arg_parser.add_argument
 
@@ -141,12 +141,13 @@ def main():
         files = [args.version_file] + args.files
         file_regexes = [args.version_regex] + args.file_regexes
         base_commit = get_base_commit(repo, args.base)
+        current_commit = repo.commit(args.current)
 
         # make files relative to repo root if cwd is not the repo root
-        cwd_repo_path_diff = os.path.relpath(os.getcwd(), repo.working_tree_dir)
-        files = [os.path.normpath(os.path.join(cwd_repo_path_diff, _f)) for _f in files]
+        cwd_repo_path = os.path.relpath(os.getcwd(), repo.working_tree_dir)
+        files = [os.path.normpath(os.path.join(cwd_repo_path, _f)) for _f in files]
 
-        do_check(base_commit, repo.commit(args.current), files, file_regexes)
+        do_check(base_commit, current_commit, files, file_regexes)
 
 
 if __name__ == '__main__':
