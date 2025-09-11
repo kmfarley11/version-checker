@@ -113,10 +113,10 @@ def do_check(base_commit, current_commit, files, file_regexes):
     version_regex = file_regexes.pop(0)
 
     cwd_repo_path = os.path.relpath(os.getcwd(), current_commit.repo.working_tree_dir)
+    LOG.info('Checking for changes within path %s/', cwd_repo_path)
     scoped_diff = base_commit.diff(current_commit, cwd_repo_path)
     if len(scoped_diff) == 0:
-        _ok('No changes detected between current commit and base commit '
-            f' within path "{cwd_repo_path}/"')
+        _ok('No changes detected between current commit and base commit ')
         return True
 
     old, new = _parse_versions_from_version_file(
