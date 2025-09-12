@@ -1,7 +1,8 @@
 # (Base) Version Checker
 
 [![PyPI version](https://badge.fury.io/py/base-version-checker.svg)](https://badge.fury.io/py/base-version-checker)
-[![Travis](https://img.shields.io/travis/kmfarley11/version-checker/main.svg?logo=travis)](https://travis-ci.com/kmfarley11/version-checker)
+[![CI workflow](https://github.com/kmfarley11/version-checker/actions/workflows/ci.yml/badge.svg)](google.com)
+[![CD workflow](https://github.com/kmfarley11/version-checker/actions/workflows/cd.yml/badge.svg)](google.com)
 [![codecov](https://codecov.io/gh/kmfarley11/version-checker/branch/main/graph/badge.svg?token=IG1MO377GJ)](https://codecov.io/gh/kmfarley11/version-checker)
 
 Synchronize and track all hardcoded versions in a project!
@@ -10,7 +11,7 @@ Versions specified in .bumpversion.cfg are compared to those hosted in a baselin
 ## User install
 ```bash
 sudo apt install python3 python3-pip
-python3 -m pip install version_checker-0.2.3-py3-none-any.whl
+python3 -m pip install version_checker-0.2.4-py3-none-any.whl
 version_checker -h
 ```
 
@@ -35,6 +36,12 @@ git checkout main
 bump2version <major|minor|patch|pre|build> --commit --tag
 git push
 git push --tags
+```
+
+Note: if CICD requests a version bump on merging to main ahead of a release as part of a pull request, we'll instead create the tag post-merge. Till then you'll need to do this as part of your request:
+```bash
+bump2version <major|minor|patch|pre|build> --commit
+git push
 ```
 
 ## Usage
