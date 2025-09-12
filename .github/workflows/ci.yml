@@ -1,0 +1,62 @@
+name: CI
+on:
+  # run tests, building, linting, and coverage on pushes to `main` and PRs
+  # deployment will happen only for tags, see cd.yml
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  # run tests 
+  tests:
+    name: py${{ matrix.python-version }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]  # add macos-latest, windows-latest if you need
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]. # for building, testing, & linting. See setup.cfg
+
+      - name: Lint
+        run: |
+          pylint version_checker
+
+      - name: Tests
+        run: |
+          pytest -q --maxfail=1 --disable-warnings
+      
+      - name: Build
+        run: |
+          python -m build
+
+      - name: Upload coverage
+        if: always()
+        run: |
+          coverage run -m pytest
+          coverage xml
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          # token: ${{ secrets.CODECOV_TOKEN }}
