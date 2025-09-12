@@ -13,6 +13,9 @@
 PY=${1:-python}
 ${PY} --version | grep -E '3.[6-9]'
 
+# need to have references for origin/main or master etc. for this to work...
+git fetch
+
 # some verification first (python, venv, git)
 if [ ! "$?" -eq "0"  ] ; then
     echo "Error! python version ${PY} too old, try with a newer one"
