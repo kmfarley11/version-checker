@@ -2,7 +2,7 @@ name: CD
 on:
   push:
     tags:
-      - "*"     # any tag pushed will trigger the release process. consider doing a regex check for semver in a job prior to upload
+      - "*"     # any tag pushed will trigger the release process. but publish should be gated by version_checker tool itself
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install ".[build]"
           python -m build
+
+      - name: Verify Version Bumped
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "."
+          version_checker -b main -c HEAD
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

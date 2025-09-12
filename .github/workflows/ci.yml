@@ -60,3 +60,7 @@ jobs:
         with:
           files: ./coverage.xml
           # token: ${{ secrets.CODECOV_TOKEN }}
+      
+      - name: Verify Integration Tests
+        run: |
+          bash integration-test.sh
