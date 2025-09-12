@@ -63,10 +63,10 @@ jobs:
           files: ./coverage.xml
           # token: ${{ secrets.CODECOV_TOKEN }}
       
-      # - name: Verify the version was bumped if targeting main
-      #   if: github.event_name == 'pull_request' && github.base_ref == 'main'
-      #   run: |
-      #     version_checker -b main -c HEAD
+      - name: Verify the version was bumped if targeting main
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        run: |
+          version_checker -b main -c HEAD
 
       - name: Verify Integration Tests
         run: |
