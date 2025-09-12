@@ -19,6 +19,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ensure HEAD~1 is present for version check...
 
       - name: Set up Python
         uses: actions/setup-python@v5
