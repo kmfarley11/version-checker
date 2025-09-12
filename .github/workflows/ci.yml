@@ -63,4 +63,6 @@ jobs:
       
       - name: Verify Integration Tests
         run: |
+          git config user.name "CICD Git User"
+          git config user.email "fake@email.com"
           bash integration-test.sh
