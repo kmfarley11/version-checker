@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # needed to push (even with --dry-run) as in the integration suite
 
 jobs:
 
@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true   # default; keeps GITHUB_TOKEN in origin url
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -61,8 +63,18 @@ jobs:
           files: ./coverage.xml
           # token: ${{ secrets.CODECOV_TOKEN }}
       
+      # - name: Verify the version was bumped if targeting main
+      #   if: github.event_name == 'pull_request' && github.base_ref == 'main'
+      #   run: |
+      #     version_checker -b main -c HEAD
+
       - name: Verify Integration Tests
         run: |
-          git config user.name "CICD Git User"
-          git config user.email "fake@email.com"
+          # the integration suite tests git hooks, so git creds are necessary (even with --dry-run)
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Ensure remote uses token (belt & suspenders)
+          git remote set-url origin \
+            https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+          # test the hooks / cli
           bash integration-test.sh
