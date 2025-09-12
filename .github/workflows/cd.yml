@@ -4,6 +4,11 @@ on:
     tags:
       - "*"     # any tag pushed will trigger the release process. but publish should be gated by version_checker tool itself
   workflow_dispatch:
+    inputs:
+      skip-check:
+        description: "Skip the version check step?"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -27,11 +32,11 @@ jobs:
           python -m build
 
       - name: Verify Version Bumped
+        if: github.event_name != 'workflow_dispatch' || inputs.skip-check != 'true'
         run: |
           python -m pip install --upgrade pip
           python -m pip install "."
-          git fetch origin main
-          version_checker -b origin/main -c HEAD
+          version_checker -b HEAD~1 -c HEAD
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

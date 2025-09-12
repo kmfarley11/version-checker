@@ -38,11 +38,7 @@ git push
 git push --tags
 ```
 
-Note: if CICD requests a version bump on merging to main ahead of a release as part of a pull request, we'll instead create the tag post-merge. Till then you'll need to do this as part of your request:
-```bash
-bump2version <major|minor|patch|pre|build> --commit
-git push
-```
+Maintainers aren't expected to bump the version of their own accord in pull request. The version of the package will be bumped by the above commands via the repo Owner for now.
 
 ## Usage
 See [version_checker/Readme.md](version_checker/Readme.md) for usage details.

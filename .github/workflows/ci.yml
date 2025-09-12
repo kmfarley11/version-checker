@@ -63,11 +63,12 @@ jobs:
           files: ./coverage.xml
           # token: ${{ secrets.CODECOV_TOKEN }}
       
-      - name: Verify the version was bumped if targeting main
-        if: github.event_name == 'pull_request' && github.base_ref == 'main'
-        run: |
-          git fetch origin main
-          version_checker -b origin/main -c HEAD
+      # FTODO - consider best flow so that folks merging new features are asked to bump in-MR
+      # - name: Verify the version was bumped if targeting main
+      #   if: github.event_name == 'pull_request' && github.base_ref == 'main'
+      #   run: |
+      #     git fetch origin main
+      #     version_checker -b origin/main -c HEAD
 
       - name: Verify Integration Tests
         run: |
