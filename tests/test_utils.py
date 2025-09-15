@@ -399,7 +399,7 @@ def test_do_check_verifies_all_version_changes(mocker):
     diff_stub.iter_change_type.return_value = [blob_mock]
     
     assert vc_utils.do_check(base_commit_mock, current_commit_mock, files, file_regexes)
-    patched_sys.exit.not_called()
+    patched_sys.exit.assert_not_called()
     patched_ok.assert_called()
 
 
