@@ -71,11 +71,11 @@ def compare_versions(old_version_str, new_version_str, abort=False):
         LOG.warning('One or more of the version files was un-parsable:', exc_info=_exc)
 
     # verify the change is productive
-    LOG.info('\told version = %s', old_version)
-    LOG.info('\tnew version = %s', new_version)
+    LOG.info('\tOld version = %s', old_version)
+    LOG.info('\tNew version = %s', new_version)
 
     if new_version is None:
-        _error('New version not detected...', abort=abort)
+        _error('New version not detected!', abort=abort)
         return False
 
     if old_version is None:
@@ -86,7 +86,7 @@ def compare_versions(old_version_str, new_version_str, abort=False):
         _ok('New version larger than old')
         return True
 
-    _error('New version needs to be greater than old, see semver.org', abort=abort)
+    _error('New version needs to be greater than old! See semver.org', abort=abort)
     return False
 
 
@@ -114,9 +114,10 @@ def do_check(base_commit, current_commit, files, file_regexes):
 
     cwd_repo_path = os.path.relpath(os.getcwd(), current_commit.repo.working_tree_dir)
     LOG.info('Checking for changes within path %s/', cwd_repo_path)
+
     scoped_diff = base_commit.diff(current_commit, cwd_repo_path)
     if len(scoped_diff) == 0:
-        _ok('No changes detected between current commit and base commit ')
+        _ok('No changes detected between current commit and base commit')
         return True
 
     old, new = _parse_versions_from_version_file(
@@ -236,9 +237,9 @@ def search_commit_file(git_commit, fpath, search_regex, abort=True):
         commit_file = _get_commit_file(git_commit, fpath)
         return _search_or_error(search_regex, commit_file, abort=abort)
     except KeyError:
-        _error(f'File {fpath} not found in the provided git.Commit {git_commit}', abort=abort)
+        _error(f'File {fpath} not found in the provided commit ({str(git_commit)})!', abort=abort)
     except AttributeError:
-        _error(f'Provided git.Commit {git_commit} is not valid!', abort=abort)
+        _error(f'Provided commit ({str(git_commit)}) is not valid!', abort=abort)
     return ''
 
 
@@ -248,27 +249,26 @@ def _parse_versions_from_version_file(base_commit, current_commit, version_file,
     '''Helper to parse out old & new versions from the base & current commits
     
     Returns old, new version strings'''
-    # filter the changelist for the base version file, empty list if not found
-    version_file_diff = list(
-        filter(
-            lambda d: d.b_path == version_file,
-            base_commit.diff(current_commit).iter_change_type('M')))
-    old, new = '', ''
+    if not _has_commit_file(current_commit, version_file):
+        _error(
+            f"File {version_file} not found in current commit ({str(current_commit)})!",
+            abort=True,
+        )
 
-    if version_file not in base_commit.tree and version_file in current_commit.tree:
+    if not _has_commit_file(base_commit, version_file):
         LOG.warning(
-            '%s not found in base (%s), assuming new file...', version_file, str(base_commit))
+            "File %s not found in base commit (%s), assuming new file...",
+            version_file,
+            str(base_commit),
+        )
         new = search_commit_file(current_commit, version_file, version_regex)
-    elif not version_file_diff:
-        _error(f'{version_file} change not detected', abort=True)
-    else:
-        # attempt to parse out new & old version from inputted version_file
-        _ok(f'{version_file} change detected')
-        old = search_commit_file(base_commit, version_file, version_regex)
-        new = search_commit_file(current_commit, version_file, version_regex)
+        return "", new
 
+    # attempt to parse out new & old version from inputted version_file
+    _ok(f'Parsed versions from {version_file} for base commit and current commit')
+    old = search_commit_file(base_commit, version_file, version_regex, abort=True)
+    new = search_commit_file(current_commit, version_file, version_regex, abort=True)
     return old, new
-
 
 def _resolve_files_to_regexes_mismatch(files, file_regexes, default_regex):
     '''Helper to resolve mismatches between files & file_regexes lengths
@@ -294,6 +294,13 @@ def _get_commit_file(fcommit, fpath):
     '''Helper (shorthand) to extract file contents at a specific commit'''
     return (fcommit.tree / fpath).data_stream.read().decode()
 
+def _has_commit_file(fcommit, fpath):
+    '''Helper (shorthand) to check if a file exists at a specific commit'''
+    try:
+        fcommit.tree.join(fpath)
+        return True
+    except KeyError:
+        return False
 
 def _search_or_error(regex_str, to_search_str, abort=True):
     '''Helper to do a regex search and return matches, exits program on error'''
