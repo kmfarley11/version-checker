@@ -11,7 +11,7 @@
 #       bash integration-test.sh .venv/bin/python
 #
 PY=${1:-python}
-${PY} --version | grep -E '3.[6-9]'
+${PY} --version | grep -E '3\.(6|7|8|9|10|11|12|13)'
 
 # need to have references for origin/main or master etc. for this to work...
 git fetch
@@ -47,7 +47,11 @@ git checkout ${BASEBRANCH}
 git checkout -b ${NUBRANCH}
 
 echo "TEST START"
-echo "TEST STEP: new branch needs version change"
+echo "TEST STEP: new branch with new commit needs version change"
+NEW_TESTFILE=TEST-file.to-be-removed.txt
+touch $NEW_TESTFILE
+git add $NEW_TESTFILE
+git commit -m "Add test file to ensure we are required to bump"
 version_checker && exit 1
 
 echo "TEST STEP: verify pre-push fails as well"
@@ -62,8 +66,9 @@ bump2version patch --commit || exit 1
 echo "TEST STEP: manually verify all files changed..."
 cat .bumpversion.cfg | grep -oE 'file:.*[^]]' | grep -oE '[^file:].*' | sort > expected.lst
 git diff ${BASEBRANCH}..HEAD --name-only | grep -v .bumpversion.cfg | sort > actual.lst
-diff expected.lst actual.lst || exit 1
-rm expected.lst actual.lst
+cat actual.lst | sed "/$NEW_TESTFILE/d" > actual-trimmed.lst
+diff expected.lst actual-trimmed.lst || exit 1
+rm expected.lst actual.lst actual-trimmed.lst
 
 echo "TEST STEP: version changes detected & ok now"
 version_checker || exit 1
