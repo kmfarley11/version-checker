@@ -72,6 +72,11 @@ def create_mock_tree(in_files: str) -> tuple[git.Tree, git.Blob]:
 # endregion
 
 
+# region CheckerPath tests
+
+# endregion
+
+
 # region get_base_commit tests
 def test_get_base_commit_errors_for_bad_repo(mocker):
     patched_sys = mocker.patch.object(vc_utils, "sys")
@@ -120,28 +125,28 @@ def test_get_base_commit_errors_for_no_valid_base(mocker):
 # region get_bumpversion_config tests
 def test_get_bumpversion_config_handles_invalid_config():
     test_cfg_file = MALFORMATTED_CFG_FILE
-    files, regexes = vc_utils.get_bumpversion_config(cfg_file=test_cfg_file)
+    files, regexes = vc_utils.get_bumpversion_config(test_cfg_file)
     assert not files
     assert not regexes
 
 
 def test_get_bumpversion_config_handles_no_bumpversion_settings():
     test_cfg_file = NOSECTIONS_CFG_FILE
-    files, regexes = vc_utils.get_bumpversion_config(cfg_file=test_cfg_file)
+    files, regexes = vc_utils.get_bumpversion_config(test_cfg_file)
     assert not files
     assert not regexes
 
 
 def test_get_bumpversion_config_returns_nothing_if_no_files_detected():
     test_cfg_file = EMPTY_CFG_FILE
-    files, regexes = vc_utils.get_bumpversion_config(cfg_file=test_cfg_file)
+    files, regexes = vc_utils.get_bumpversion_config(test_cfg_file)
     assert not files
     assert not regexes
 
 
 def test_get_bumpversion_config_handles_valid_config():
-    test_cfg_file = VALID_CFG_FILE
-    files, regexes = vc_utils.get_bumpversion_config(cfg_file=test_cfg_file)
+    test_cfg_file = vc_utils.CheckerPath(".", VALID_CFG_FILE)
+    files, regexes = vc_utils.get_bumpversion_config(test_cfg_file)
 
     # verify we have files & regexes & match overall expected list size
     assert len(files) == len(KNOWN_FILE_DEFAULTS)
@@ -149,8 +154,9 @@ def test_get_bumpversion_config_handles_valid_config():
 
     # verify all files are accounted for, and the ones without 'search' are defaulted
     for f, r in zip(files, regexes):
-        assert f in KNOWN_FILE_DEFAULTS.keys()
-        if KNOWN_FILE_DEFAULTS[f]:
+        f_str = str(f)
+        assert f_str in KNOWN_FILE_DEFAULTS.keys()
+        if KNOWN_FILE_DEFAULTS[f_str]:
             assert r == _vc_version
         else:
             assert r != _vc_version
@@ -165,7 +171,7 @@ def test_search_commit_file_handles_invalid_file(mocker):
     commit_mock = mock.MagicMock(spec=git.Commit)
     commit_mock.tree.__truediv__.side_effect = KeyError("file not found")
 
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
 
     ret = vc_utils.search_commit_file(
         commit_mock, "fakefile", "fakesearch", abort=False
@@ -175,7 +181,7 @@ def test_search_commit_file_handles_invalid_file(mocker):
 
 
 def test_search_commit_file_handles_invalid_commit(mocker):
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
 
     # wrong type, will raise attribute error
     ret = vc_utils.search_commit_file(
@@ -186,7 +192,7 @@ def test_search_commit_file_handles_invalid_commit(mocker):
 
 
 def test_search_commit_file_handles_text_not_found(mocker):
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
     patched__get = mocker.patch.object(vc_utils, "_get_commit_file")
     patched__get.return_value = "arbitrary text"
 
@@ -197,7 +203,7 @@ def test_search_commit_file_handles_text_not_found(mocker):
 
 
 def test_search_commit_file_handles_regex_fail_but_rawtext_match(mocker):
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
     patched__get = mocker.patch.object(vc_utils, "_get_commit_file")
     patched__get.return_value = "some content... no regex here[0-9]asdf!..."
 
@@ -208,7 +214,7 @@ def test_search_commit_file_handles_regex_fail_but_rawtext_match(mocker):
 
 
 def test_search_commit_file_handles_regex_success(mocker):
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
     patched__get = mocker.patch.object(vc_utils, "_get_commit_file")
     patched__get.return_value = "some content... regex me here123!..."
 
@@ -227,7 +233,7 @@ def test_install_hook_handles_vc_not_installed(mocker):
     patched_shutil.which.return_value = ""
 
     patched_os = mocker.patch.object(vc_utils, "os")
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
 
     vc_utils.install_hook("pre-push")
 
@@ -237,7 +243,7 @@ def test_install_hook_handles_vc_not_installed(mocker):
 
 def test_install_hook_handles_hook_already_exists(mocker):
     patched_shutil = mocker.patch.object(vc_utils, "shutil")
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
     patched_os = mocker.patch.object(vc_utils, "os")
 
     patched_os.path.islink.return_value = True
@@ -250,7 +256,7 @@ def test_install_hook_handles_hook_already_exists(mocker):
 
 def test_install_hook_creates_link_if_dne(mocker):
     patched_shutil = mocker.patch.object(vc_utils, "shutil")
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
     patched_os = mocker.patch.object(vc_utils, "os")
 
     patched_os.path.islink.return_value = False
@@ -308,7 +314,7 @@ def test_do_check_handles_empty_file_regex_list(mocker):
 
 def test_do_check_handles_file_not_changed(mocker):
     patched_sys = mocker.patch.object(vc_utils, "sys")
-    patched_ok = mocker.patch.object(vc_utils, "_ok")
+    patched_ok = mocker.patch.object(vc_utils, "ok")
     base_commit_mock = mock.MagicMock(spec=git.Commit)
     current_commit_mock = mock.MagicMock(spec=git.Commit)
     files = ["version.txt"]
@@ -336,7 +342,7 @@ def test_do_check_handles_file_changed_but_no_version_change(mocker):
     patched_search = mocker.patch.object(vc_utils, "search_commit_file")
     patched_search.side_effect = [old_ver, new_ver]
 
-    files = ["version.txt"]
+    files = [vc_utils.CheckerPath(".", "version.txt")]
     file_regexes = [_vc_version]
 
     fake_tree, blob_mock = create_mock_tree(["version.txt"])
@@ -366,7 +372,7 @@ def test_do_check_handles_release_and_build_number_addition(mocker):
     old_ver = "0.0.0"
     new_ver = "0.0.1-alpha.0"
 
-    patched_ok = mocker.patch.object(vc_utils, "_ok")
+    patched_ok = mocker.patch.object(vc_utils, "ok")
     patched_search = mocker.patch.object(vc_utils, "search_commit_file")
     patched_search.side_effect = [old_ver, new_ver]
 
@@ -397,8 +403,8 @@ def test_do_check_detects_other_file_mismatch(mocker):
     patched_search = mocker.patch.object(vc_utils, "search_commit_file")
     patched_search.side_effect = [old_ver, new_ver, other_file_ver]
 
-    files = ["version.txt", "some_other_file.txt"]
-    file_regexes = [_vc_version]
+    files = [vc_utils.CheckerPath(".", "version.txt"), vc_utils.CheckerPath(".", "some_other_file.txt")]
+    file_regexes = [_vc_version, _vc_version]
 
     patched_log = mocker.patch.object(vc_utils, "LOG")
 
@@ -430,12 +436,12 @@ def test_do_check_verifies_all_version_changes(mocker):
     other_file_ver = new_ver
     other_file_ver2 = new_ver
 
-    patched_ok = mocker.patch.object(vc_utils, "_ok")
+    patched_ok = mocker.patch.object(vc_utils, "ok")
     patched_search = mocker.patch.object(vc_utils, "search_commit_file")
     patched_search.side_effect = [old_ver, new_ver, other_file_ver, other_file_ver2]
 
-    files = ["version.txt", "some_other_file.txt", "some_other_file2.txt"]
-    file_regexes = [_vc_version]
+    files = [vc_utils.CheckerPath(".", "version.txt"), vc_utils.CheckerPath(".", "some_other_file.txt"), vc_utils.CheckerPath(".", "some_other_file2.txt")]
+    file_regexes = [_vc_version, _vc_version, _vc_version]
 
     fake_tree, blob_mock = create_mock_tree(["version.txt"])
     base_commit_mock.tree = fake_tree
@@ -458,11 +464,11 @@ def test_do_check_handles_new_file(mocker):
     old_ver = "0.0.1"
     new_ver = "0.0.2"
 
-    patched_ok = mocker.patch.object(vc_utils, "_ok")
+    patched_ok = mocker.patch.object(vc_utils, "ok")
     patched_search = mocker.patch.object(vc_utils, "search_commit_file")
     patched_search.side_effect = [old_ver, new_ver]
 
-    files = ["version.txt"]
+    files = [vc_utils.CheckerPath(".", "version.txt")]
     file_regexes = [_vc_version, _vc_version]
 
     fake_current_tree, fake_blob = create_mock_tree(["version.txt"])
@@ -491,7 +497,7 @@ def test_do_check_errors_for_file_not_in_current_tree(mocker):
 
     patched_log = mocker.patch.object(vc_utils, "LOG")
 
-    files = ["file-should-not-be-found-version.txt"]
+    files = [vc_utils.CheckerPath(".", "file-should-not-be-found-version.txt")]
     file_regexes = [_vc_version, _vc_version]
 
     fake_tree, fake_blob = create_mock_tree(["version.txt"])
@@ -518,11 +524,11 @@ def test_do_check_handles_bad_new_version(mocker):
     )
 
     patched_log = mocker.patch.object(vc_utils, "LOG")
-    patched_ok = mocker.patch.object(vc_utils, "_ok")
+    patched_ok = mocker.patch.object(vc_utils, "ok")
     patched_search = mocker.patch.object(vc_utils, "search_commit_file")
     patched_search.side_effect = [new_ver]
 
-    files = ["version.txt"]
+    files = [vc_utils.CheckerPath(".", "version.txt")]
     file_regexes = [_vc_version]
 
     fake_current_tree, fake_blob = create_mock_tree(["version.txt"])
@@ -556,7 +562,7 @@ def test_do_check_handles_new_version_less_than_old_version(mocker):
     patched_search = mocker.patch.object(vc_utils, "search_commit_file")
     patched_search.side_effect = [old_ver, new_ver]
 
-    files = ["version.txt"]
+    files = [vc_utils.CheckerPath(".", "version.txt")]
     file_regexes = [_vc_version]
 
     fake_tree, blob_mock = create_mock_tree(["version.txt"])
@@ -579,7 +585,7 @@ def test_do_check_handles_new_version_less_than_old_version(mocker):
 
 
 def test_compare_versions_returns_false_for_invalid_new_version(mocker):
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
     old_ver = "0.0.1"
     new_ver = "not a version"
     assert not vc_utils.compare_versions(old_ver, new_ver, abort=False)
@@ -587,7 +593,7 @@ def test_compare_versions_returns_false_for_invalid_new_version(mocker):
 
 
 def test_compare_versions_returns_false_for_new_version_less_than_old(mocker):
-    patched_err = mocker.patch.object(vc_utils, "_error")
+    patched_err = mocker.patch.object(vc_utils, "error")
     old_ver = "0.0.2"
     new_ver = "0.0.1"
     assert not vc_utils.compare_versions(old_ver, new_ver, abort=False)

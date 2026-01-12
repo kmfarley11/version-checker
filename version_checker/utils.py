@@ -11,17 +11,54 @@ import shutil
 import subprocess
 import sys
 
-import semver
+from git import Repo, Commit
 from git.exc import BadName
+import semver
 
-from version_checker.constants import LOG_NAME, CONFIG_FILE, OK, ERROR, BASES_IF_NONE
+from version_checker.constants import LOG_NAME, OK, ERROR, BASES_IF_NONE
 
 
 LOG = logging.getLogger(LOG_NAME)
 
 
 # utility functions
-def get_base_commit(repo, base_input):
+class CheckerPath:
+    """Utility class for handling absolute, relative, and repo-relative paths"""
+    def __init__(self, repo_path, file_path):
+        self._repo_root_path: str = os.path.abspath(repo_path)
+        self._abs_path: str = os.path.abspath(file_path)
+
+    @property
+    def repo_root_path(self):
+        """The absolute path of the root of the repo"""
+        return self._repo_root_path
+
+    @property
+    def abs_path(self):
+        """The absolute path of the given file"""
+        return self.abs_path
+
+    @property
+    def cwd_path(self):
+        """The path relative to the cwd of the given file"""
+        return os.path.relpath(self._abs_path, os.getcwd())
+
+    @property
+    def repo_path(self):
+        """The path relative to the root of the repo of the given file"""
+        return os.path.relpath(self._abs_path, self._repo_root_path)
+
+    def __fspath__(self):
+        return self._abs_path
+
+    def __str__(self):
+        return self.cwd_path
+
+    def __repr__(self):
+        return self.cwd_path
+
+
+def get_base_commit(repo: Repo, base_input: str):
     '''Obtain the base commit to check against
 
     Uses an inputted GitPython repo object (git.Repo) to retrieve the base commit
@@ -32,7 +69,7 @@ def get_base_commit(repo, base_input):
     Returns GitPython commit object if successful, errors if invalid
     '''
     if not repo:
-        return _error('Invalid GitPython repo provided!')
+        return error('Invalid GitPython repo provided!')
 
     if base_input:
         return repo.commit(base_input)
@@ -45,10 +82,10 @@ def get_base_commit(repo, base_input):
             return base_commit
         except BadName:
             LOG.warning('%s not detected', possible_base)
-    return _error('No VERSION_BASE provided, and default bases not valid!')
+    return error('No VERSION_BASE provided, and default bases not valid!')
 
 
-def compare_versions(old_version_str, new_version_str, abort=False):
+def compare_versions(old_version_str: str, new_version_str: str, abort=False):
     '''Helper to compare two version strings via semver-python
 
     Positional arguments
@@ -75,22 +112,27 @@ def compare_versions(old_version_str, new_version_str, abort=False):
     LOG.info('\tNew version = %s', new_version)
 
     if new_version is None:
-        _error('New version not detected!', abort=abort)
+        error('New version not detected!', abort=abort)
         return False
 
     if old_version is None:
-        _ok('Old version not detected, assuming first commit with new version')
+        ok('Old version not detected, assuming first commit with new version')
         return True
 
     if old_version < new_version:
-        _ok('New version larger than old')
+        ok('New version larger than old')
         return True
 
-    _error('New version needs to be greater than old! See semver.org', abort=abort)
+    error('New version needs to be greater than old! See semver.org', abort=abort)
     return False
 
 
-def do_check(base_commit, current_commit, files, file_regexes):
+def do_check(
+    base_commit: Commit,
+    current_commit: Commit,
+    files: list[CheckerPath],
+    file_regexes: list[str],
+):
     '''Checking functionality
 
     Verified the current file versions have been incremented from the base branch
@@ -107,46 +149,43 @@ def do_check(base_commit, current_commit, files, file_regexes):
         '%s, %s, %s, %s', str(base_commit), str(current_commit), str(files), str(file_regexes))
 
     if not files or not file_regexes:
-        return _error('No files or regexes provided!', abort=True)
+        return error('No files or regexes provided!', abort=True)
 
     version_file = files.pop(0)
     version_regex = file_regexes.pop(0)
 
     cwd_repo_path = os.path.relpath(os.getcwd(), current_commit.repo.working_tree_dir)
     LOG.info('Checking for changes within path %s/', cwd_repo_path)
-
     scoped_diff = base_commit.diff(current_commit, cwd_repo_path)
     if len(scoped_diff) == 0:
-        _ok('No changes detected between current commit and base commit')
+        ok('No changes detected between current commit and base commit')
         return True
 
-    old, new = _parse_versions_from_version_file(
-        base_commit, current_commit, version_file, version_regex)
+    old_version, new_version = parse_versions_from_version_file(
+        base_commit, current_commit, version_file.repo_path, version_regex)
 
-    compare_versions(old, new, abort=True)
+    compare_versions(old_version, new_version, abort=True)
 
     if len(files) == 0:
         LOG.warning('No extra file checking inputted, only verfied %s', version_file)
 
-    file_regexes = _resolve_files_to_regexes_mismatch(files, file_regexes, version_regex)
-
     error_detected = False
     LOG.debug('Checking %s against regexes %s', str(files), str(file_regexes))
-    for _f, _r in zip(files, file_regexes):
-        file_version = search_commit_file(current_commit, _f, _r, abort=False)
-        if new not in file_version:
-            _error(f'\t{_f} needs to match {version_file}!', abort=False)
+    for file, regex in zip(files, file_regexes):
+        file_version = search_commit_file(current_commit, file.repo_path, regex, abort=False)
+        if new_version not in file_version:
+            error(f'\t{file} needs to match {version_file}!', abort=False)
             error_detected = True
         else:
-            LOG.debug('\t%s: %s', _f, file_version)
+            LOG.debug('\t%s: %s', file, file_version)
     if error_detected:
-        return _error('Not all files are correct', abort=True)
+        return error('Not all files are correct', abort=True)
 
-    _ok('All files matched the correct version')
+    ok('All files matched the correct version')
     return True
 
 
-def do_update(version_part, options='--allow-dirty'):
+def do_update(version_part: str, options='--allow-dirty'):
     '''Enact version updates for local files
 
     Just calls out to bump2version, relies on a .bumpversion.cfg
@@ -165,70 +204,57 @@ def install_hook(hook):
 
     prog_path = shutil.which('version_checker')
     if not prog_path:
-        _error('Issue getting version_checker bin path, is it installed?!', use_long_text=False)
+        error('Issue getting version_checker bin path, is it installed?!', use_long_text=False)
         return
 
     hook_path = os.path.abspath(os.path.join('.', '.git', 'hooks', hook))
     if os.path.exists(hook_path) or os.path.islink(hook_path):
-        _error(f'Git hook "{hook_path}" already exists!\n\tRemove the existing hook '
+        error(f'Git hook "{hook_path}" already exists!\n\tRemove the existing hook '
                 'and re-try if further action is desired.', use_long_text=False)
     else:
         os.symlink(prog_path, hook_path)
-        _ok(f'"{prog_path}", installed to "{hook_path}"')
+        ok(f'"{prog_path}", installed to "{hook_path}"')
 
 
-def get_bumpversion_config(cfg_file=CONFIG_FILE):
-    '''Helper to parse bumpversion configurations
+def get_bumpversion_config(config_file: CheckerPath, commit: Commit | None = None):
+    """Helper to parse bumpversion configurations from config file
 
-    returns file, file regexes, and current version to be checked
-    '''
+    returns parsed file, file regexes
+    """
+    if commit is None and os.path.exists(config_file) and os.path.isfile(config_file):
+        with open(config_file, "r", encoding="utf-8") as f:
+            cfg_content = f.read()
+    elif commit is not None and _has_commit_file(commit, config_file.repo_path):
+        cfg_content = _get_commit_file(commit, config_file.repo_path)
+    else:
+        LOG.warning("Bumpversion configs not found, skipping...")
+        return [], []
+
     def _warn_invalid():
         # generator to shorthand warn the user of an invalid config
-        LOG.warning('Invalid bumpversion config detected %s skipping cfg parse...', cfg_file)
-        LOG.warning('version_checker --example-config')
-        LOG.warning('or see github.com/c4urself/bump2version for more details')
+        LOG.warning(
+            "Invalid bumpversion config detected %s skipping cfg parse...", config_file
+        )
+        LOG.warning("version_checker --example-config")
+        LOG.warning("or see github.com/c4urself/bump2version for more details")
         return [], []
 
     cfg = configparser.ConfigParser()
 
     try:
-        cfg.read(cfg_file)
+        cfg.read_string(cfg_content)
     except configparser.MissingSectionHeaderError:
         return _warn_invalid()
 
-    if not cfg.has_section('bumpversion') or not cfg.has_option('bumpversion', 'current_version'):
+    if not cfg.has_section("bumpversion") or not cfg.has_option(
+        "bumpversion", "current_version"
+    ):
         return _warn_invalid()
 
-    current_version = cfg.get('bumpversion', 'current_version')
-    toplevel_options = cfg.options('bumpversion')
-    replace_dict = {o: cfg.get('bumpversion', o) for o in toplevel_options}
-    LOG.debug('Toplevel (bumpversion) dict: %s', str(replace_dict))
-
-    file_regexes = []
-    files = [s.split(':')[-1] for s in cfg.sections() if ':file:' in s]
-    for _f in files:
-        fregex = current_version
-        section = f'bumpversion:file:{_f}'
-        # we only update if a search option is provided
-        if cfg.has_option(section, 'search'):
-            fregex = cfg.get(section, 'search')
-            # this'd be easier if bump2version used interpolation but they dont...
-            #   so we need to replace any {keys} at the bumpversion level with the values provided
-            for _k, _v in replace_dict.items():
-                # the key is probably current_version, we need to make it {current_version}...
-                fregex = fregex.replace('{' + str(_k) + '}', _v)
-        file_regexes.append(fregex)
-        LOG.debug('Added %s for %s', fregex, _f)
-
-    # make files relative to cwd if .bumpversion.cfg is not in cwd
-    config_dirs = os.path.dirname(cfg_file)
-    files = [os.path.join(config_dirs, f) if config_dirs else f for f in files]
-
-    LOG.info('Successfully parsed %s', cfg_file)
-    return files, file_regexes
+    return _parse_bumpversion_config(cfg, config_file)
 
 
-def search_commit_file(git_commit, fpath, search_regex, abort=True):
+def search_commit_file(git_commit: Commit, fpath: str, search_regex: str, abort=True):
     '''Search a file in a source tree for some regex pattern
 
     Returns search text or empty string
@@ -237,20 +263,20 @@ def search_commit_file(git_commit, fpath, search_regex, abort=True):
         commit_file = _get_commit_file(git_commit, fpath)
         return _search_or_error(search_regex, commit_file, abort=abort)
     except KeyError:
-        _error(f'File {fpath} not found in the provided commit ({str(git_commit)})!', abort=abort)
+        error(f'File {fpath} not found in the provided commit ({str(git_commit)})!', abort=abort)
     except AttributeError:
-        _error(f'Provided commit ({str(git_commit)}) is not valid!', abort=abort)
+        error(f'Provided commit ({str(git_commit)}) is not valid!', abort=abort)
     return ''
 
 
-# (protected) helpers
-
-def _parse_versions_from_version_file(base_commit, current_commit, version_file, version_regex):
+def parse_versions_from_version_file(
+    base_commit: Commit, current_commit: Commit, version_file: str, version_regex: str
+):
     '''Helper to parse out old & new versions from the base & current commits
     
     Returns old, new version strings'''
     if not _has_commit_file(current_commit, version_file):
-        _error(
+        error(
             f"File {version_file} not found in current commit ({str(current_commit)})!",
             abort=True,
         )
@@ -265,12 +291,13 @@ def _parse_versions_from_version_file(base_commit, current_commit, version_file,
         return "", new
 
     # attempt to parse out new & old version from inputted version_file
-    _ok(f'Parsed versions from {version_file} for base commit and current commit')
+    ok(f'Parsed versions from {version_file} for base commit and current commit')
     old = search_commit_file(base_commit, version_file, version_regex, abort=True)
     new = search_commit_file(current_commit, version_file, version_regex, abort=True)
     return old, new
 
-def _resolve_files_to_regexes_mismatch(files, file_regexes, default_regex):
+
+def resolve_files_to_regexes_mismatch(files: list, file_regexes: list, default_regex: str):
     '''Helper to resolve mismatches between files & file_regexes lengths
 
     Returns updated file_regexes list'''
@@ -290,40 +317,12 @@ def _resolve_files_to_regexes_mismatch(files, file_regexes, default_regex):
     return resolved_file_regexes
 
 
-def _get_commit_file(fcommit, fpath):
-    '''Helper (shorthand) to extract file contents at a specific commit'''
-    return (fcommit.tree / fpath).data_stream.read().decode()
-
-def _has_commit_file(fcommit, fpath):
-    '''Helper (shorthand) to check if a file exists at a specific commit'''
-    try:
-        fcommit.tree.join(fpath)
-        return True
-    except KeyError:
-        return False
-
-def _search_or_error(regex_str, to_search_str, abort=True):
-    '''Helper to do a regex search and return matches, exits program on error'''
-    retval = ''
-    result = re.search(regex_str, to_search_str)
-    LOG.debug('Inputted: "%s"', to_search_str)
-    LOG.debug('Search txt: "%s"', regex_str)
-    if result:
-        retval = result.group(0)
-    elif regex_str in to_search_str:
-        LOG.debug('Regex parse failed, but raw string compare succeeded for "%s"', regex_str)
-        retval = regex_str
-    else:
-        _error(f'Could not find "{regex_str}" in inputted string', abort=abort)
-    return retval
-
-
-def _ok(msg):
+def ok(msg: str):
     '''Helper to print out an ok message'''
     LOG.info('%s... %s', msg, OK)
 
 
-def _error(msg, abort=True, use_long_text=True):
+def error(msg: str, abort=True, use_long_text=True):
     '''Helper to print out an error message and exit (1)
 
     Generically returns empty string, if not aborting via sys.exit...
@@ -346,3 +345,67 @@ def _error(msg, abort=True, use_long_text=True):
             ''')
         sys.exit(1)
     return ''
+
+# (protected) helpers
+
+def _parse_bumpversion_config(cfg: configparser.ConfigParser, config_file: CheckerPath):
+    """Helper to parse bumpversion configurations from ConfigParser
+
+    returns parsed file, file regexes
+    """
+    current_version = cfg.get("bumpversion", "current_version")
+    replace_dict = dict(cfg.items("bumpversion"))
+    LOG.debug("Toplevel (bumpversion) dict: %s", str(replace_dict))
+
+    file_regexes = []
+    files = [s.split(":")[-1] for s in cfg.sections() if ":file:" in s]
+    for _f in files:
+        fregex = current_version
+        section = f"bumpversion:file:{_f}"
+        # we only update if a search option is provided
+        if cfg.has_option(section, "search"):
+            fregex = cfg.get(section, "search")
+            # this'd be easier if bump2version used interpolation but they dont...
+            #   so we need to replace any {keys} at the bumpversion level with the values provided
+            for _k, _v in replace_dict.items():
+                # the key is probably current_version, we need to make it {current_version}...
+                fregex = fregex.replace("{" + str(_k) + "}", _v)
+        file_regexes.append(fregex)
+        LOG.debug("Added %s for %s", fregex, _f)
+
+    # make files relative to cwd if .bumpversion.cfg is not in cwd
+    config_dir = os.path.dirname(config_file)
+    files = [
+        CheckerPath(config_file.repo_root_path, os.path.join(config_dir, f))
+        for f in files
+    ]
+
+    LOG.info("Successfully parsed %s", config_file)
+    return files, file_regexes
+
+def _get_commit_file(fcommit: Commit, fpath: str):
+    '''Helper (shorthand) to extract file contents at a specific commit'''
+    return (fcommit.tree / fpath).data_stream.read().decode()
+
+def _has_commit_file(fcommit: Commit, fpath: str):
+    '''Helper (shorthand) to check if a file exists at a specific commit'''
+    try:
+        fcommit.tree.join(fpath)
+        return True
+    except KeyError:
+        return False
+
+def _search_or_error(regex_str: str, to_search_str: str, abort=True):
+    '''Helper to do a regex search and return matches, exits program on error'''
+    retval = ''
+    result = re.search(regex_str, to_search_str)
+    LOG.debug('Inputted: "%s"', to_search_str)
+    LOG.debug('Search txt: "%s"', regex_str)
+    if result:
+        retval = result.group(0)
+    elif regex_str in to_search_str:
+        LOG.debug('Regex parse failed, but raw string compare succeeded for "%s"', regex_str)
+        retval = regex_str
+    else:
+        error(f'Could not find "{regex_str}" in inputted string', abort=abort)
+    return retval

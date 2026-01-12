@@ -24,16 +24,23 @@ To make full-use of this tool, create a .bumpversion.cfg!
 
 import argparse
 import logging
-import os
 import sys
 
 import git
 
 from version_checker.constants import LOG_NAME, CONFIG_FILE, BASE, CURRENT, REPO_PATH, FILES, \
                                       VERSION_FILE, VERSION_REGEX, FILE_REGEXES, EXAMPLE_CONFIG, \
-                                      README_CONTENTS
-from version_checker.utils import get_base_commit, do_check, do_update, install_hook, \
-                                  get_bumpversion_config
+                                      README_CONTENTS, MergeStrategy
+from version_checker.merge_utils import do_merge
+from version_checker.utils import (
+    CheckerPath,
+    get_base_commit,
+    do_check,
+    do_update,
+    install_hook,
+    get_bumpversion_config,
+    resolve_files_to_regexes_mismatch,
+)
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -45,7 +52,7 @@ def _get_repo(repo_path=REPO_PATH):
     try:
         return git.Repo(repo_path, search_parent_directories=True)
     except git.exc.InvalidGitRepositoryError:
-        LOG.critical('This utility must be run from the root of a git repository!')
+        LOG.critical('This utility must be run from a git repository!')
         sys.exit(1)
 
 
@@ -72,16 +79,6 @@ def main():
     arg_parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
 
-    # verify the runlocation has a git repo
-    repo = _get_repo(REPO_PATH)
-
-    # prior to argument parsing etc., attempt to parse bumpversion config
-    files, file_regexes = FILES, FILE_REGEXES
-    if os.path.exists(CONFIG_FILE) and os.path.isfile(CONFIG_FILE):
-        files, file_regexes = get_bumpversion_config(cfg_file=CONFIG_FILE)
-    else:
-        LOG.warning('Bumpversion configs not found, skipping...')
-
     _a = arg_parser.add_argument
 
     _a('--example-config', '-e', action='store_true',
@@ -95,6 +92,16 @@ def main():
        help='Install version_checker as a git hook (works best with .bumpconfig.cfg)')
     _a('--update', '-u', choices=['major', 'minor', 'patch'], default=None,
        help='Update versions via bump2version, assumes .bumpconfig.cfg')
+    _a(
+        "--merge",
+        "-m",
+        nargs="?",
+        choices=[s.value for s in MergeStrategy],
+        const="higher",
+        default=None,
+        help="Resolve version-related merge conflicts" \
+             f" (almost always choose '{MergeStrategy.HIGHER.value}' strategy)",
+    )
     _a('--log-level', '-l', choices=['info', 'debug', 'warning', 'error'], default='info',
        help='Set the log level for the application')
 
@@ -107,9 +114,9 @@ def main():
     _a('--version-regex', '-r', type=str, default=VERSION_REGEX,
        help='Regex to extract version out of version file')
 
-    _a('--files', '-f', nargs='+', default=files,
+    _a('--files', '-f', nargs='+', default=FILES,
        help='Files to check version number')
-    _a('--file-regexes', nargs='+', default=file_regexes,
+    _a('--file-regexes', nargs='+', default=FILE_REGEXES,
        help='List of regex for inputted files when checking for version #')
 
     _a('hookargs', nargs=argparse.REMAINDER,
@@ -120,35 +127,55 @@ def main():
     LOG.setLevel(_log_name_to_level(args.log_level))
     LOG.debug(args)
 
+    # verify the runlocation has a git repo
+    repo = _get_repo(REPO_PATH)
+    config_file = CheckerPath(repo.working_tree_dir, CONFIG_FILE)
+    version_file = CheckerPath(repo.working_tree_dir, args.version_file)
+    files = [CheckerPath(repo.working_tree_dir, file) for file in args.files]
+
     if args.version:
-        LOG.info('Version Checker Utility: 0.3.0')
-
+        LOG.info("Version Checker Utility: 0.3.1")
     elif args.example_config:
-        LOG.info('Here is an example config you could tailor, then paste into '
-                 '.bumpversion.cfg: \n%s', EXAMPLE_CONFIG)
-
+        LOG.info(
+            "Here is an example config you could tailor, then paste into "
+            ".bumpversion.cfg: \n%s",
+            EXAMPLE_CONFIG,
+        )
     elif args.readme:
-        LOG.info('\n%s', README_CONTENTS)
-
+        LOG.info("\n%s", README_CONTENTS)
     elif args.install_hook:
         install_hook(args.install_hook)
-
     elif args.update:
         do_update(args.update)
+    elif args.merge:
+        current_commit = repo.commit(args.current)
+        bumpversion_files, bumpversion_file_regexes = get_bumpversion_config(
+            config_file, commit=current_commit
+        )
 
+        files = [version_file] + (files or bumpversion_files)
+        file_regexes = [args.version_regex] + (
+            args.file_regexes or bumpversion_file_regexes
+        )
+        file_regexes = resolve_files_to_regexes_mismatch(files, file_regexes, args.version_regex)
+
+        merge_strategy = MergeStrategy(args.merge)
+
+        do_merge(current_commit, files, file_regexes, merge_strategy)
     else:
-        # for brevity & pylint, package version file & regex with others, pop later...
-        files = [args.version_file] + args.files
-        file_regexes = [args.version_regex] + args.file_regexes
         base_commit = get_base_commit(repo, args.base)
         current_commit = repo.commit(args.current)
+        bumpversion_files, bumpversion_file_regexes = get_bumpversion_config(
+            config_file
+        )
 
-        # make files relative to repo root if cwd is not the repo root
-        cwd_repo_path = os.path.relpath(os.getcwd(), repo.working_tree_dir)
-        files = [os.path.normpath(os.path.join(cwd_repo_path, _f)) for _f in files]
+        files = [version_file] + (files or bumpversion_files)
+        file_regexes = [args.version_regex] + (
+            args.file_regexes or bumpversion_file_regexes
+        )
+        file_regexes = resolve_files_to_regexes_mismatch(files, file_regexes, args.version_regex)
 
         do_check(base_commit, current_commit, files, file_regexes)
-
 
 if __name__ == '__main__':
     main()
