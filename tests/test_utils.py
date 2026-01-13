@@ -25,6 +25,7 @@ from version_checker import __version__ as _vc_version
 NOTFOUND_CFG_FILE = "tests/notfound.txt"
 MALFORMATTED_CFG_FILE = "tests/bad_config_malformatted.txt"
 NOSECTIONS_CFG_FILE = "tests/bad_config_sections.txt"
+DUPEOPTION_CFG_FILE = "tests/bad_config_dupe_option.txt"
 EMPTY_CFG_FILE = "tests/ok_config_empty.txt"
 VALID_CFG_FILE = ".bumpversion.cfg"
 
@@ -138,6 +139,17 @@ def test_get_bumpversion_config_handles_invalid_config():
     files, regexes = vc_utils.get_bumpversion_config(test_cfg_file)
     assert not files
     assert not regexes
+
+
+def test_get_bumpversion_config_handles_dupe_option_config_with_error(mocker):
+    patched_sys = mocker.patch.object(vc_utils, "sys")
+
+    test_cfg_file = DUPEOPTION_CFG_FILE
+    files, regexes = vc_utils.get_bumpversion_config(test_cfg_file)
+    assert not files
+    assert not regexes
+
+    patched_sys.exit.assert_called_once_with(1)
 
 
 def test_get_bumpversion_config_handles_no_bumpversion_settings():

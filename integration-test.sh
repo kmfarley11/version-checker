@@ -3,7 +3,7 @@
 # integration-test.sh
 #
 #   Bash script to excercise the version checker utility against a live repo
-#   Expects python3.6+
+#   Expects python3.11+
 #   DISCLAIMER: Will replace pre-push if exists with version checker
 #
 #   Usage:
@@ -11,7 +11,7 @@
 #       bash integration-test.sh .venv/bin/python
 #
 PY=${1:-python}
-${PY} --version | grep -E '3\.(9|10|11|12|13)'
+${PY} --version | grep -E '3\.(11|12|13|14)'
 
 # need to have references for origin/main or master etc. for this to work...
 git fetch
@@ -37,8 +37,9 @@ echo "TEST SETUP"
 echo "Replacing whatever is in .git/hooks/pre-push with version checker"
 rm .git/hooks/pre-push
 version_checker -i pre-push || exit 1
-PREVBRANCH=$(git branch | grep -oE '\*.*' | grep -oE '[A-Za-z0-9]+')
+PREVBRANCH=$(git branch | grep -oE '\*.*' | grep -oE '[A-Za-z0-9\-]+')
 NUBRANCH=$(${PY} -c "import uuid; print(uuid.uuid4())")
+NUNUBRANCH=$(${PY} -c "import uuid; print(uuid.uuid4())")
 BASEBRANCH=origin/main
 
 echo "Creating temporary branch for testing... '$NUBRANCH'"
@@ -73,10 +74,27 @@ rm expected.lst actual.lst actual-trimmed.lst
 echo "TEST STEP: version changes detected & ok now"
 version_checker || exit 1
 git push origin ${NUBRANCH} --dry-run || exit 1
+
+echo "TEST STEP: create merge conflicts using a new branch based on the original and bump with a different part"
+git checkout ${BASEBRANCH}
+git checkout -b ${NUNUBRANCH}
+bump2version major --commit || exit 1
+git merge ${NUBRANCH}
+git commit -m "this shouldn't work..." && exit 1  # expect conflicts...
+
+echo "TEST STEP: manually the python files which are needed to get version checker to run..."
+git checkout ${NUNUBRANCH} -- version_checker/*.py
+git commit -m "this still shouldn't work..." && exit 1  # expect conflicts...
+
+echo "TEST STEP: auto resolve merge conflicts with cli utility and verify no more issues"
+version_checker --merge
+git commit -m "this should work..." || exit 1  # expect conflicts resolved...
+
 echo "TEST FINISH"
 
 echo "TEST CLEANUP"
 git checkout ${PREVBRANCH} || echo "WARNING: couldn't check out ${PREVBRANCH} not erroring in case expected from detached head..."
 git branch -D ${NUBRANCH}
+git branch -D ${NUNUBRANCH}
 
 echo "Done. everything seems ok"

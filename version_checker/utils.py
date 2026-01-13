@@ -245,6 +245,11 @@ def get_bumpversion_config(config_file: CheckerPath, commit: Commit = None):
         cfg.read_string(cfg_content)
     except configparser.MissingSectionHeaderError:
         return _warn_invalid()
+    except configparser.DuplicateOptionError:
+        _warn_invalid()
+        error(f"A duplicate option was detected in the bumpversion cfg {config_file}. "
+              "If this is the result of a merge conflict, see 'version_checker --merge' "
+              "and options therein!")
 
     if not cfg.has_section("bumpversion") or not cfg.has_option(
         "bumpversion", "current_version"
@@ -340,7 +345,10 @@ def error(msg: str, abort=True, use_long_text=True):
                 Note: this checker will only succeed if the latest commit contains updated versions
                 To bypass it as a hook try using --no-verify but this is NOT preferred...
 
-                If your files are out-of sync, it is recommended to revert the files per the base
+                If your files are out-of sync, try the 'version_checker --merge' command
+                and consult version_checker --help for automerge strategies.
+                      
+                If automerging has issues, it is recommended to revert the files per the base
                 Then the bump2version program can update them all synchronously
             ''')
         sys.exit(1)
