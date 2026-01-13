@@ -62,6 +62,10 @@ version_checker -i pre-push
 # the errors should tell you to do something like the following
 bump2version patch
 bump2version --help
+
+# given an ongoing merge conflict of versions, run the following to auto-resolve
+# keeping the higher of the two versions
+version_checker --merge
 ```
 
 ## environment variables
