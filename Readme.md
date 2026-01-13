@@ -12,7 +12,7 @@ Also auto-resolve version-related merge conflicts.
 ## User install
 ```bash
 sudo apt install python3 python3-pip
-python3 -m pip install version_checker-0.3.0-py3-none-any.whl
+python3 -m pip install version_checker-0.4.0-py3-none-any.whl
 version_checker -h
 ```
 

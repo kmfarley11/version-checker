@@ -1,6 +1,6 @@
 #!.venv/bin/python
 r'''
-Version Checker Utility: 0.3.0
+Version Checker Utility: 0.4.0
 Python utility designed to facilitate version file checks & updates.
 Assumes git and prefers bump2version.
 Sync files containing raw version text, and verify they get bumped from a git base location.
@@ -134,7 +134,7 @@ def main():
     files = [CheckerPath(repo.working_tree_dir, file) for file in args.files]
 
     if args.version:
-        LOG.info("Version Checker Utility: 0.3.0")
+        LOG.info("Version Checker Utility: 0.4.0")
     elif args.example_config:
         LOG.info(
             "Here is an example config you could tailor, then paste into "
