@@ -216,7 +216,7 @@ def install_hook(hook):
         ok(f'"{prog_path}", installed to "{hook_path}"')
 
 
-def get_bumpversion_config(config_file: CheckerPath, commit: Commit | None = None):
+def get_bumpversion_config(config_file: CheckerPath, commit: Commit = None):
     """Helper to parse bumpversion configurations from config file
 
     returns parsed file, file regexes
