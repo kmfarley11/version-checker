@@ -9,6 +9,7 @@ def test_get_base_commit_handles_valid_input_value():
 Pytests for the public functions of the version_checker code
 """
 
+import os
 import mock
 import pytest
 
@@ -21,6 +22,7 @@ from version_checker import __version__ as _vc_version
 
 # region test vars
 # test file for probing different configs
+NOTFOUND_CFG_FILE = "tests/notfound.txt"
 MALFORMATTED_CFG_FILE = "tests/bad_config_malformatted.txt"
 NOSECTIONS_CFG_FILE = "tests/bad_config_sections.txt"
 EMPTY_CFG_FILE = "tests/ok_config_empty.txt"
@@ -73,6 +75,14 @@ def create_mock_tree(in_files: str) -> tuple[git.Tree, git.Blob]:
 
 
 # region CheckerPath tests
+
+def test_checker_path():
+    path = vc_utils.CheckerPath("./", "version_checker/__init__.py")
+
+    assert path.repo_root_path == os.path.abspath("./")
+    assert path.abs_path == os.path.abspath("version_checker/__init__.py")
+    assert path.cwd_path == "version_checker/__init__.py"
+    assert path.repo_path == "version_checker/__init__.py"
 
 # endregion
 
@@ -143,6 +153,11 @@ def test_get_bumpversion_config_returns_nothing_if_no_files_detected():
     assert not files
     assert not regexes
 
+def test_get_bumpversion_config_returns_nothing_if_config_is_not_found():
+    test_cfg_file = NOTFOUND_CFG_FILE
+    files, regexes = vc_utils.get_bumpversion_config(test_cfg_file)
+    assert not files
+    assert not regexes
 
 def test_get_bumpversion_config_handles_valid_config():
     test_cfg_file = vc_utils.CheckerPath(".", VALID_CFG_FILE)
@@ -161,6 +176,31 @@ def test_get_bumpversion_config_handles_valid_config():
         else:
             assert r != _vc_version
 
+def test_get_bumpversion_config_handles_valid_commit_config(mocker):
+    test_cfg_file = vc_utils.CheckerPath(".", VALID_CFG_FILE)
+
+    commit_mock = mock.MagicMock(spec=git.Commit)
+    patched__has = mocker.patch.object(vc_utils, "_has_commit_file")
+    patched__has.return_value = True
+    patched__get = mocker.patch.object(vc_utils, "_get_commit_file")
+    with open(test_cfg_file, "r", encoding="utf-8") as f:
+        cfg_content = f.read()
+    patched__get.return_value = cfg_content
+
+    files, regexes = vc_utils.get_bumpversion_config(test_cfg_file, commit=commit_mock)
+
+    # verify we have files & regexes & match overall expected list size
+    assert len(files) == len(KNOWN_FILE_DEFAULTS)
+    assert len(regexes) == len(KNOWN_FILE_DEFAULTS)
+
+    # verify all files are accounted for, and the ones without 'search' are defaulted
+    for f, r in zip(files, regexes):
+        f_str = str(f)
+        assert f_str in KNOWN_FILE_DEFAULTS.keys()
+        if KNOWN_FILE_DEFAULTS[f_str]:
+            assert r == _vc_version
+        else:
+            assert r != _vc_version
 
 # endregion
 
@@ -600,6 +640,40 @@ def test_compare_versions_returns_false_for_new_version_less_than_old(mocker):
     patched_err.assert_called_once_with(
         "New version needs to be greater than old! See semver.org", abort=False
     )
+
+
+# endregion
+
+
+# region resolve_files_to_regexes_mismatch tests
+# same, fewer files, fewer regexes
+
+
+def test_resolve_files_to_regexes_mismatch_returns_original_regexes_if_file_count_matches():
+    original_regexes = ["abc", "def"]
+    resolved_regexes = vc_utils.resolve_files_to_regexes_mismatch(
+        ["123", "456"], original_regexes, "ghi"
+    )
+
+    assert resolved_regexes == original_regexes
+
+
+def test_resolve_files_to_regexes_mismatch_returns_appended_default_regex_if_file_count_larger():
+    original_regexes = ["abc"]
+    resolved_regexes = vc_utils.resolve_files_to_regexes_mismatch(
+        ["123", "456"], original_regexes, "ghi"
+    )
+
+    assert resolved_regexes == ["abc", "ghi"]
+
+
+def test_resolve_files_to_regexes_mismatch_returns_truncated_regexes_if_file_count_smaller():
+    original_regexes = ["abc", "def"]
+    resolved_regexes = vc_utils.resolve_files_to_regexes_mismatch(
+        ["123"], original_regexes, "ghi"
+    )
+
+    assert resolved_regexes == ["abc"]
 
 
 # endregion

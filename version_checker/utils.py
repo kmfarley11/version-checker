@@ -36,7 +36,7 @@ class CheckerPath:
     @property
     def abs_path(self):
         """The absolute path of the given file"""
-        return self.abs_path
+        return self._abs_path
 
     @property
     def cwd_path(self):
