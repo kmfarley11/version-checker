@@ -11,7 +11,7 @@
 #       bash integration-test.sh .venv/bin/python
 #
 PY=${1:-python}
-${PY} --version | grep -E '3\.(6|7|8|9|10|11|12|13)'
+${PY} --version | grep -E '3\.(9|10|11|12|13)'
 
 # need to have references for origin/main or master etc. for this to work...
 git fetch
@@ -37,7 +37,7 @@ echo "TEST SETUP"
 echo "Replacing whatever is in .git/hooks/pre-push with version checker"
 rm .git/hooks/pre-push
 version_checker -i pre-push || exit 1
-PREVBRANCH=$(git branch | grep -oE '\*.*' | grep -oE '[a-Z0-9]+')
+PREVBRANCH=$(git branch | grep -oE '\*.*' | grep -oE '[A-Za-z0-9]+')
 NUBRANCH=$(${PY} -c "import uuid; print(uuid.uuid4())")
 BASEBRANCH=origin/main
 

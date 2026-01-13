@@ -3,7 +3,9 @@ version_checker constants
 
 Defaults and globals to be used by version checker software
 '''
+from enum import Enum
 import os
+import re
 
 
 # pylint: disable=bad-option-value,unnecessary-lambda-assignment
@@ -43,3 +45,23 @@ with open(os.path.join(
 README_CONTENTS = ''
 with open(os.path.join(LIB_LOC, SUBDIR, 'Readme.md'), 'r', encoding='utf-8') as _f:
     README_CONTENTS = _f.read()
+
+class MergeStrategy(Enum):
+    """Enum for possible merge strategies when resolving merge conflicts"""
+    HIGHER="higher"
+    LOWER="lower"
+    CURRENT="current"
+    INCOMING="incoming"
+    BOTH="both"
+    NEITHER="neither"
+
+CONFLICT_RE = re.compile(
+    r"""
+    (?P<start>^<<<<<<<[^\n]*\n)
+    (?P<current>.*?)
+    ^=======\n
+    (?P<incoming>.*?)
+    (?P<end>^>>>>>>>[^\n]*\n?)
+    """,
+    re.MULTILINE | re.DOTALL | re.VERBOSE,
+)

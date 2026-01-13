@@ -7,6 +7,7 @@
 
 Synchronize and track all hardcoded versions in a project!
 Versions specified in .bumpversion.cfg are compared to those hosted in a baseline such as `origin/main`...
+Also auto-resolve version-related merge conflicts.
 
 ## User install
 ```bash
